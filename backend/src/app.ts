@@ -12,6 +12,8 @@ import { PartyRepository } from "./parties/repository.js";
 import { registerPartyRoutes } from "./parties/routes.js";
 import { ProductRepository } from "./products/repository.js";
 import { registerProductRoutes } from "./products/routes.js";
+import { PurchaseRepository } from "./purchases/repository.js";
+import { registerPurchaseRoutes } from "./purchases/routes.js";
 import { registerUserRoutes } from "./users/routes.js";
 
 declare module "fastify" {
@@ -26,6 +28,7 @@ export function buildApp(environment: Environment, pool: Pool) {
   const parties = new PartyRepository(pool);
   const products = new ProductRepository(pool);
   const inventory = new InventoryRepository(pool);
+  const purchases = new PurchaseRepository(pool);
 
   app.register(cors, { origin: environment.CORS_ORIGIN ?? false });
   app.register(jwt, { secret: environment.JWT_SECRET });
@@ -44,6 +47,7 @@ export function buildApp(environment: Environment, pool: Pool) {
   registerPartyRoutes(app, users, parties);
   registerProductRoutes(app, users, products);
   registerInventoryRoutes(app, users, inventory);
+  registerPurchaseRoutes(app, users, purchases, products);
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
