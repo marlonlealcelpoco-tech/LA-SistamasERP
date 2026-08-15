@@ -8,6 +8,7 @@ export type ProductRecord = {
   unit: string;
   cost: string;
   sale_price: string;
+  profit_margin_pct: string;
   active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -22,10 +23,11 @@ export type ProductInput = {
   unit: string;
   cost: number;
   salePrice: number;
+  profitMarginPct: number;
 };
 
 const productColumns = `products.id, products.code, products.name, products.description, products.unit,
-  products.cost, products.sale_price, products.active, products.created_at, products.updated_at,
+  products.cost, products.sale_price, products.profit_margin_pct, products.active, products.created_at, products.updated_at,
   stock.quantity, stock.minimum_quantity`;
 
 export class ProductRepository {
@@ -56,10 +58,10 @@ export class ProductRepository {
     try {
       await client.query("BEGIN");
       const product = await client.query<{ id: number }>(
-        `INSERT INTO products (code, name, description, unit, cost, sale_price)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO products (code, name, description, unit, cost, sale_price, profit_margin_pct)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
-        [input.code.trim().toUpperCase(), input.name.trim(), input.description ?? null, input.unit, input.cost, input.salePrice]
+        [input.code.trim().toUpperCase(), input.name.trim(), input.description ?? null, input.unit, input.cost, input.salePrice, input.profitMarginPct]
       );
       await client.query("INSERT INTO stock (product_id) VALUES ($1)", [product.rows[0].id]);
       const result = await client.query<ProductRecord>(
@@ -82,10 +84,10 @@ export class ProductRepository {
     const result = await this.pool.query<ProductRecord>(
       `UPDATE products
        SET code = $2, name = $3, description = $4, unit = $5, cost = $6, sale_price = $7,
-           updated_at = CURRENT_TIMESTAMP
+           profit_margin_pct = $8, updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
        RETURNING id`,
-      [id, input.code.trim().toUpperCase(), input.name.trim(), input.description ?? null, input.unit, input.cost, input.salePrice]
+      [id, input.code.trim().toUpperCase(), input.name.trim(), input.description ?? null, input.unit, input.cost, input.salePrice, input.profitMarginPct]
     );
     if (!result.rows[0]) return undefined;
 
