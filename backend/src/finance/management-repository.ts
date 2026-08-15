@@ -1,7 +1,12 @@
 import type { Pool } from "pg";
+import { FinancialMovementRepository } from "./financial-movement-repository";
 
 export class FinancialManagementRepository {
-  constructor(private readonly pool: Pool) {}
+  private readonly movements: FinancialMovementRepository;
+
+  constructor(private readonly pool: Pool) {
+    this.movements = new FinancialMovementRepository(pool);
+  }
 
   async summary(startDate: string, endDate: string) {
     const result = await this.pool.query(`
@@ -17,17 +22,26 @@ export class FinancialManagementRepository {
   }
 
   async cashFlow(startDate: string, endDate: string) {
-    const result = await this.pool.query(`
-      SELECT movement_date::date AS date,
-        COALESCE(SUM(CASE WHEN direction='IN' THEN amount ELSE 0 END),0) AS income,
-        COALESCE(SUM(CASE WHEN direction='OUT' THEN amount ELSE 0 END),0) AS expense
-      FROM financial_account_movements
-      WHERE movement_date::date BETWEEN $1::date AND $2::date
-      GROUP BY movement_date::date ORDER BY date`, [startDate, endDate]);
+    const movements = await this.movements.list(startDate, endDate);
+    const byDate = new Map<string, { income: number; expense: number }>();
+
+    for (const movement of movements) {
+      const date = new Date(movement.date).toISOString().slice(0, 10);
+      const current = byDate.get(date) ?? { income: 0, expense: 0 };
+      if (movement.amount >= 0) current.income += movement.amount;
+      else current.expense += Math.abs(movement.amount);
+      byDate.set(date, current);
+    }
+
     let balance = 0;
-    return result.rows.map((row) => {
-      balance += Number(row.income) - Number(row.expense);
-      return { date: row.date, income: Number(row.income), expense: Number(row.expense), balance: Number(balance.toFixed(2)) };
+    return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, values]) => {
+      balance += values.income - values.expense;
+      return {
+        date,
+        income: Number(values.income.toFixed(2)),
+        expense: Number(values.expense.toFixed(2)),
+        balance: Number(balance.toFixed(2))
+      };
     });
   }
 
