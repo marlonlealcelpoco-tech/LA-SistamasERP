@@ -16,6 +16,13 @@ export type DreReport = {
   operatingResult: number;
 };
 
+export type DreInput = {
+  grossRevenue: number;
+  salesReturns?: number;
+  costOfGoodsSold?: number;
+  operatingExpenses?: number;
+};
+
 export function buildCashFlow(rows: Array<{ date: string; income: number; expense: number }>, openingBalance = 0): CashFlowRow[] {
   let balance = openingBalance;
   return rows.map((row) => {
@@ -27,18 +34,19 @@ export function buildCashFlow(rows: Array<{ date: string; income: number; expens
   });
 }
 
-export function buildDre(input: {
-  grossRevenue: number;
-  salesReturns?: number;
-  costOfGoodsSold?: number;
-  operatingExpenses?: number;
-}): DreReport {
-  const grossRevenue = Number(input.grossRevenue || 0);
-  const salesReturns = Number(input.salesReturns || 0);
-  const costOfGoodsSold = Number(input.costOfGoodsSold || 0);
-  const operatingExpenses = Number(input.operatingExpenses || 0);
-  const netRevenue = grossRevenue - salesReturns;
+/**
+ * DRE gerencial: resultado econômico do período, separado do fluxo de caixa.
+ * Receita e despesas são informadas pelas fontes operacionais; recebimento/pagamento
+ * não deve ser somado novamente como receita/despesa.
+ */
+export function buildDre(input: DreInput): DreReport {
+  const grossRevenue = Math.max(0, Number(input.grossRevenue || 0));
+  const salesReturns = Math.max(0, Number(input.salesReturns || 0));
+  const costOfGoodsSold = Math.max(0, Number(input.costOfGoodsSold || 0));
+  const operatingExpenses = Math.max(0, Number(input.operatingExpenses || 0));
+  const netRevenue = Math.max(0, grossRevenue - salesReturns);
   const grossProfit = netRevenue - costOfGoodsSold;
+
   return {
     grossRevenue,
     salesReturns,
@@ -48,4 +56,9 @@ export function buildDre(input: {
     operatingExpenses,
     operatingResult: grossProfit - operatingExpenses
   };
+}
+
+export function dreMarginPercent(value: number, revenue: number): number {
+  if (!revenue) return 0;
+  return Number(((value / revenue) * 100).toFixed(2));
 }
