@@ -14,8 +14,8 @@ const setupSchema = credentialsSchema.extend({
   bootstrapToken: z.string().min(16)
 });
 
-function publicUser(user: { id: number; name: string; email: string; active: boolean }) {
-  return { id: user.id, name: user.name, email: user.email, active: user.active };
+function publicUser(user: { id: number; name: string; email: string; active: boolean }, roles: string[]) {
+  return { id: user.id, name: user.name, email: user.email, active: user.active, roles };
 }
 
 export function registerAuthRoutes(
@@ -34,9 +34,14 @@ export function registerAuthRoutes(
       return reply.code(409).send({ message: "O administrador inicial já foi criado." });
     }
 
-    const user = await users.create(input.name, input.email, await hashPassword(input.password));
+    const user = await users.createWithRoles(
+      input.name,
+      input.email,
+      await hashPassword(input.password),
+      ["ADMIN"]
+    );
     const token = await reply.jwtSign({ sub: String(user.id), email: user.email });
-    return reply.code(201).send({ user: publicUser(user), token });
+    return reply.code(201).send({ user, token });
   });
 
   app.post("/auth/login", async (request, reply) => {
@@ -48,7 +53,7 @@ export function registerAuthRoutes(
     }
 
     const token = await reply.jwtSign({ sub: String(user.id), email: user.email });
-    return { user: publicUser(user), token };
+    return { user: publicUser(user, await users.findRoleNames(user.id)), token };
   });
 
   app.get("/auth/me", { onRequest: [app.authenticate] }, async (request, reply) => {
@@ -59,6 +64,6 @@ export function registerAuthRoutes(
       return reply.code(401).send({ message: "Usuário não autorizado." });
     }
 
-    return { user: publicUser(user) };
+    return { user: publicUser(user, await users.findRoleNames(user.id)) };
   });
 }
