@@ -47,23 +47,20 @@ export function registerSalesRoutes(app: FastifyInstance, users: UserRepository,
     if (!(await requireRoles(request, reply, users, [...SUPERVISOR_ROLES]))) return;
     const { id, itemId } = itemIdSchema.parse(request.params);
     const body = z.object({ reason: z.string().trim().min(3).max(255) }).parse(request.body);
-    const result = await supervisorActions.cancelItem({ saleId: id, saleItemId: itemId, supervisorId: Number(request.user.sub), reason: body.reason });
-    return reply.code(200).send(result);
+    return reply.send(await supervisorActions.cancelItem({ saleId: id, saleItemId: itemId, supervisorId: Number(request.user.sub), reason: body.reason }));
   });
 
   app.post("/sales/:id/discount/authorize", { onRequest: [app.authenticate] }, async (request, reply) => {
     if (!(await requireRoles(request, reply, users, [...SUPERVISOR_ROLES]))) return;
     const { id } = saleIdSchema.parse(request.params);
     const body = z.object({ amount: z.coerce.number().positive(), reason: z.string().trim().min(3).max(255) }).parse(request.body);
-    const result = await supervisorActions.authorizeDiscount({ saleId: id, supervisorId: Number(request.user.sub), amount: body.amount, reason: body.reason });
-    return reply.code(201).send(result);
+    return reply.code(201).send(await supervisorActions.authorizeDiscount({ saleId: id, supervisorId: Number(request.user.sub), amount: body.amount, reason: body.reason }));
   });
 
   app.post("/sales/:id/exchange/authorize", { onRequest: [app.authenticate] }, async (request, reply) => {
     if (!(await requireRoles(request, reply, users, [...SUPERVISOR_ROLES]))) return;
     const { id } = saleIdSchema.parse(request.params);
     const body = z.object({ customerId: z.coerce.number().int().positive(), productId: z.coerce.number().int().positive(), quantity: z.coerce.number().positive(), reason: z.enum(["CUSTOMER_REGRET", "WRONG_PRODUCT", "DEFECT", "OTHER"]), notes: z.string().max(255).optional(), authorizationReason: z.string().trim().min(3).max(255) }).parse(request.body);
-    const result = await supervisorActions.authorizeExchange({ saleId: id, supervisorId: Number(request.user.sub), customerId: body.customerId, productId: body.productId, quantity: body.quantity, reason: body.reason, notes: body.notes, reason: body.authorizationReason });
-    return reply.code(201).send(result);
+    return reply.code(201).send(await supervisorActions.authorizeExchange({ saleId: id, supervisorId: Number(request.user.sub), customerId: body.customerId, productId: body.productId, quantity: body.quantity, reason: body.reason, notes: body.notes, authorizationReason: body.authorizationReason }));
   });
 }
