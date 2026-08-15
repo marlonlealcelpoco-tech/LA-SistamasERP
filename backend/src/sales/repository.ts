@@ -1,5 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import { StoreCreditRepository } from "../customers/store-credit.js";
+import { validateSaleCustomer } from "../operations/operational-rules.js";
 
 export const PAYMENT_METHODS = ["CASH", "PIX", "DEBIT_CARD", "CREDIT_CARD", "TRANSFER", "CREDIT", "STORE_CREDIT"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -29,8 +30,11 @@ export class SalesRepository {
       const total = Number(input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0).toFixed(2));
       const paymentTotal = Number(input.payments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2));
       if (!input.payments.length || Math.abs(paymentTotal - total) > 0.005) throw new Error("A soma dos pagamentos deve ser igual ao total da venda.");
-      if (input.payments.some(p => p.paymentMethod === "CREDIT") && !input.customerId) throw new Error("Venda a prazo exige cliente informado.");
-      if (input.payments.some(p => p.paymentMethod === "STORE_CREDIT") && !input.customerId) throw new Error("Uso de crédito de troca exige cliente informado.");
+      validateSaleCustomer({
+        customerId: input.customerId,
+        hasCreditSale: input.payments.some(p => p.paymentMethod === "CREDIT"),
+        hasStoreCreditUse: input.payments.some(p => p.paymentMethod === "STORE_CREDIT")
+      });
 
       const sale = await client.query<SaleRecord>(`INSERT INTO sales (customer_id, seller_id, cash_session_id, status, total) VALUES ($1, $2, $3, 'CONFIRMED', $4) RETURNING id, customer_id, seller_id, cash_session_id, status, total, created_at`, [input.customerId ?? null, input.sellerId, input.cashSessionId, total]);
       const credits = new StoreCreditRepository(this.pool);
@@ -44,9 +48,7 @@ export class SalesRepository {
 
       for (const payment of input.payments) {
         if (payment.amount <= 0) throw new Error("Valor de pagamento inválido.");
-        if (payment.paymentMethod === "STORE_CREDIT") {
-          await credits.consume(client, input.customerId as number, sale.rows[0].id, payment.amount);
-        }
+        if (payment.paymentMethod === "STORE_CREDIT") await credits.consume(client, input.customerId as number, sale.rows[0].id, payment.amount);
         await client.query(`INSERT INTO sale_payments (sale_id, payment_method, amount, due_date) VALUES ($1, $2, $3, $4)`, [sale.rows[0].id, payment.paymentMethod, payment.amount, payment.dueDate ?? null]);
         if (payment.paymentMethod === "CREDIT") {
           const ar = await client.query<{ id: number }>(`INSERT INTO financial_entries (type, description, amount, due_date, customer_id, source, document_number, sale_id) VALUES ('RECEIVABLE', $1, $2, $3, $4, 'SALE', $5, $6) RETURNING id`, [`Venda ${sale.rows[0].id} - Conta a Receber`, payment.amount, payment.dueDate ?? null, input.customerId, `VENDA-${sale.rows[0].id}`, sale.rows[0].id]);
