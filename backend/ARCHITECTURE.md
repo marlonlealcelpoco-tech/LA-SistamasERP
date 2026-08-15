@@ -14,12 +14,12 @@ A interface continua fora do escopo desta etapa. Ela será implementada separada
 ## Implementado
 
 - Autenticação, primeiro administrador e sessão JWT
-- Perfis `ADMIN`, `VENDAS`, `ESTOQUE` e `FINANCEIRO`
-- Gestão administrativa de usuários, perfis e status de acesso
-- Cadastro de clientes e fornecedores, com pesquisa e controle de status
+- Perfis e gestão administrativa de usuários
+- Clientes e fornecedores, com pesquisa e controle de status
+- Produtos, preços, estoque mínimo e status
+- Movimentações de estoque transacionais, sem permitir saldo negativo
 - Autorização por perfil aplicada nas rotas
 - Banco PostgreSQL local opcional via Docker Compose
-- Migrations para IDs automáticos e dados iniciais
 
 ## Organização
 
@@ -28,7 +28,9 @@ backend/
 ├── src/
 │   ├── auth/       # login, senha, sessão e autorização
 │   ├── db/         # conexão com PostgreSQL
+│   ├── inventory/  # movimentos e saldo de estoque
 │   ├── parties/    # clientes e fornecedores
+│   ├── products/   # catálogo e preços
 │   ├── users/      # gestão de usuários e perfis
 │   ├── app.ts      # composição da API e tratamento de erros
 │   ├── config.ts   # validação da configuração de ambiente
@@ -38,4 +40,4 @@ backend/
 └── tsconfig.json
 ```
 
-Os próximos módulos (produtos, estoque, vendas e financeiro) devem seguir a mesma divisão por domínio, com autorização por perfil aplicada no nível das rotas.
+Os próximos módulos (compras, vendas e financeiro) devem seguir a mesma divisão por domínio, usando movimentos de estoque vinculados aos respectivos documentos.
