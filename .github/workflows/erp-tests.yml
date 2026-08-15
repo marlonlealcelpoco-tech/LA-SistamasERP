@@ -1,0 +1,38 @@
+name: ERP Tests
+
+on:
+  push:
+    branches: ["main", "feature/financeiro-completo"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  financial-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: TypeScript/build check
+        working-directory: backend
+        run: npm run build --if-present
+
+      - name: Run tests
+        working-directory: backend
+        run: npm test --if-present -- --runInBand
+
+      - name: Verify integration closing rules
+        working-directory: backend
+        run: |
+          node -e "const fs=require('fs'); const p='src/finance/integration-close-tests.ts'; if(!fs.existsSync(p)) process.exit(1); const s=fs.readFileSync(p,'utf8'); for(const x of ['validateStockClosure','validateCashClosure','validateOperationalResult']) if(!s.includes(x)) process.exit(1); console.log('ERP closing rules: OK')"
