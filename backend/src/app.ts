@@ -6,8 +6,12 @@ import { ZodError } from "zod";
 import type { Environment } from "./config.js";
 import { registerAuthRoutes } from "./auth/routes.js";
 import { UserRepository } from "./auth/user-repository.js";
+import { InventoryRepository } from "./inventory/repository.js";
+import { registerInventoryRoutes } from "./inventory/routes.js";
 import { PartyRepository } from "./parties/repository.js";
 import { registerPartyRoutes } from "./parties/routes.js";
+import { ProductRepository } from "./products/repository.js";
+import { registerProductRoutes } from "./products/routes.js";
 import { registerUserRoutes } from "./users/routes.js";
 
 declare module "fastify" {
@@ -20,6 +24,8 @@ export function buildApp(environment: Environment, pool: Pool) {
   const app = Fastify({ logger: environment.NODE_ENV !== "test" });
   const users = new UserRepository(pool);
   const parties = new PartyRepository(pool);
+  const products = new ProductRepository(pool);
+  const inventory = new InventoryRepository(pool);
 
   app.register(cors, { origin: environment.CORS_ORIGIN ?? false });
   app.register(jwt, { secret: environment.JWT_SECRET });
@@ -36,6 +42,8 @@ export function buildApp(environment: Environment, pool: Pool) {
   registerAuthRoutes(app, users, environment);
   registerUserRoutes(app, users);
   registerPartyRoutes(app, users, parties);
+  registerProductRoutes(app, users, products);
+  registerInventoryRoutes(app, users, inventory);
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
