@@ -21,6 +21,8 @@ const listSchema = z.object({
   terminalId: z.string().trim().min(1).max(100).optional()
 });
 
+const CASH_OPERATORS = ["ADMIN", "GERENTE", "SUPERVISOR", "VENDAS"] as const;
+
 async function canAccessSession(
   sessionId: number,
   currentUserId: number,
@@ -30,19 +32,19 @@ async function canAccessSession(
   const session = await cash.find(sessionId);
   if (!session) return false;
   const roles = await users.findRoleNames(currentUserId);
-  return session.seller_id === currentUserId || roles.includes("ADMIN");
+  return session.seller_id === currentUserId || roles.some((role) => ["ADMIN", "GERENTE", "FINANCEIRO"].includes(role));
 }
 
 export function registerCashRoutes(app: FastifyInstance, users: UserRepository, cash: CashRepository) {
   app.post("/cash-sessions", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    if (!(await requireRoles(request, reply, users, [...CASH_OPERATORS]))) return;
     const input = openSchema.parse(request.body);
     const currentUserId = Number(request.user.sub);
     const roles = await users.findRoleNames(currentUserId);
     const sellerId = input.sellerId ?? currentUserId;
 
-    if (sellerId !== currentUserId && !roles.includes("ADMIN")) {
-      return reply.code(403).send({ message: "Somente administradores podem abrir caixa para outro vendedor." });
+    if (sellerId !== currentUserId && !roles.some((role) => ["ADMIN", "GERENTE"].includes(role))) {
+      return reply.code(403).send({ message: "Somente administradores ou gerentes podem abrir caixa para outro operador." });
     }
 
     const session = await cash.open(input.terminalId, sellerId, input.openingAmount);
@@ -53,7 +55,7 @@ export function registerCashRoutes(app: FastifyInstance, users: UserRepository, 
   });
 
   app.post("/cash-sessions/:id/transactions", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    if (!(await requireRoles(request, reply, users, [...CASH_OPERATORS]))) return;
     const { id } = sessionIdSchema.parse(request.params);
     const currentUserId = Number(request.user.sub);
     if (!(await canAccessSession(id, currentUserId, users, cash))) {
@@ -66,12 +68,11 @@ export function registerCashRoutes(app: FastifyInstance, users: UserRepository, 
   });
 
   app.get("/cash-sessions/:id/report", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS", "FINANCEIRO"]))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN", "GERENTE", "VENDAS", "SUPERVISOR", "FINANCEIRO"]))) return;
     const { id } = sessionIdSchema.parse(request.params);
     const currentUserId = Number(request.user.sub);
     if (!(await canAccessSession(id, currentUserId, users, cash))) {
-      const roles = await users.findRoleNames(currentUserId);
-      if (!roles.includes("FINANCEIRO")) return reply.code(403).send({ message: "Você não possui acesso a este caixa." });
+      return reply.code(403).send({ message: "Você não possui acesso a este caixa." });
     }
     const report = await cash.report(id);
     if (!report) return reply.code(404).send({ message: "Caixa não encontrado." });
@@ -79,7 +80,7 @@ export function registerCashRoutes(app: FastifyInstance, users: UserRepository, 
   });
 
   app.post("/cash-sessions/:id/close", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    if (!(await requireRoles(request, reply, users, [...CASH_OPERATORS]))) return;
     const { id } = sessionIdSchema.parse(request.params);
     const currentUserId = Number(request.user.sub);
     if (!(await canAccessSession(id, currentUserId, users, cash))) {
@@ -93,7 +94,7 @@ export function registerCashRoutes(app: FastifyInstance, users: UserRepository, 
   });
 
   app.get("/cash-reports/daily", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "FINANCEIRO"]))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN", "GERENTE", "FINANCEIRO"]))) return;
     const input = listSchema.parse(request.query);
     const sessions = await cash.list(input.date, input.terminalId);
     const reports = await Promise.all(sessions.map((session) => cash.report(session.id)));
