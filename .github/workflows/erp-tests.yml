@@ -30,6 +30,10 @@ jobs:
         working-directory: backend
         run: npm test
 
+      - name: Verify official authorization matrix
+        working-directory: backend
+        run: node --import tsx --test src/auth/role-policy.test.ts
+
       - name: Verify integration closing rules
         working-directory: backend
         run: |
