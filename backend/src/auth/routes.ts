@@ -18,7 +18,7 @@ function publicUser(user: { id: number; name: string; email: string; active: boo
   return { id: user.id, name: user.name, email: user.email, active: user.active };
 }
 
-export async function registerAuthRoutes(
+export function registerAuthRoutes(
   app: FastifyInstance,
   users: UserRepository,
   environment: Environment
