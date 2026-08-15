@@ -53,6 +53,7 @@ function registerPartyResourceRoutes(
 }
 
 export function registerPartyRoutes(app: FastifyInstance, users: UserRepository, parties: PartyRepository) {
-  registerPartyResourceRoutes(app, users, parties, "customers", "/customers", ["ADMIN", "VENDAS", "FINANCEIRO"]);
-  registerPartyResourceRoutes(app, users, parties, "suppliers", "/suppliers", ["ADMIN", "FINANCEIRO"]);
+  const customerRoles = ["ADMIN", "GERENTE", "SUPERVISOR", "VENDAS", "ESTOQUE"] as const;
+  registerPartyResourceRoutes(app, users, parties, "customers", "/customers", customerRoles);
+  registerPartyResourceRoutes(app, users, parties, "suppliers", "/suppliers", ["ADMIN", "GERENTE", "FINANCEIRO"]);
 }
