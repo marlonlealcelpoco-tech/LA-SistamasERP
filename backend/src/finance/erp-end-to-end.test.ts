@@ -16,14 +16,7 @@ test("ERP: compra, venda, devolução, crédito e fechamento", () => {
   const closingStock = 5;
 
   assert.equal(
-    validateStockClosure(
-      openingStock,
-      purchaseQuantity,
-      saleQuantity,
-      returnQuantity,
-      adjustmentQuantity,
-      closingStock
-    ),
+    validateStockClosure(openingStock, purchaseQuantity, saleQuantity, returnQuantity, adjustmentQuantity, closingStock),
     true
   );
 
@@ -55,11 +48,7 @@ test("ERP: compra, venda, devolução, crédito e fechamento", () => {
   assert.equal(creditUsed, 15);
   assert.equal(cashReceived, 5);
 
-  const openingCash = 0;
-  const cashIncome = 5;
-  const cashExpense = 0;
-  const closingCash = 5;
-  assert.equal(validateCashClosure(openingCash, cashIncome, cashExpense, closingCash), true);
+  assert.equal(validateCashClosure(0, 5, 0, 5), true);
 });
 
 test("ERP: venda a prazo não gera recebimento imediato", () => {
@@ -73,12 +62,18 @@ test("ERP: venda a prazo não gera recebimento imediato", () => {
 
 test("ERP: transferência entre contas não altera resultado", () => {
   const transfer = 500;
-  const sourceAfter = 1000 - transfer;
-  const destinationAfter = 200 + transfer;
-  const operatingIncome = 0;
-  const operatingExpense = 0;
+  const sourceOpening = 1000;
+  const destinationOpening = 200;
+  const sourceAfter = sourceOpening - transfer;
+  const destinationAfter = destinationOpening + transfer;
 
-  assert.equal(sourceAfter + destinationAfter, 1700);
-  assert.equal(operatingIncome, 0);
-  assert.equal(operatingExpense, 0);
+  // A transferência altera somente os saldos das contas.
+  assert.equal(sourceAfter, 500);
+  assert.equal(destinationAfter, 700);
+  assert.equal(sourceAfter + destinationAfter, sourceOpening + destinationOpening);
+
+  // Resultado econômico permanece inalterado.
+  const resultBefore = 0;
+  const resultAfter = 0;
+  assert.equal(resultAfter, resultBefore);
 });
