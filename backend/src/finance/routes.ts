@@ -19,7 +19,11 @@ const settlementSchema = z.object({
   amount: z.coerce.number().positive(),
   paymentMethod: z.enum(PAYMENT_METHODS),
   cashSessionId: z.coerce.number().int().positive().optional(),
+  financialAccountId: z.coerce.number().int().positive().optional(),
   notes: z.string().trim().max(255).optional()
+}).refine((value) => value.cashSessionId !== undefined || value.financialAccountId !== undefined, {
+  message: "Informe o caixa ou a conta financeira.",
+  path: ["cashSessionId"]
 });
 const importXmlSchema = z.object({
   xml: z.string().min(20),
@@ -35,7 +39,15 @@ async function settle(
   input: z.infer<typeof settlementSchema>,
   reply: any
 ) {
-  const result = await finance.settle(id, type, input.amount, input.paymentMethod, input.cashSessionId, input.notes);
+  const result = await finance.settle(
+    id,
+    type,
+    input.amount,
+    input.paymentMethod,
+    input.cashSessionId,
+    input.financialAccountId,
+    input.notes
+  );
   if (result === "not_found") return reply.code(404).send({ message: "Conta não encontrada." });
   if (result === "already_settled") return reply.code(409).send({ message: "Esta conta já foi totalmente baixada." });
   if (result === "exceeds_remaining") return reply.code(400).send({ message: "O valor informado ultrapassa o saldo em aberto." });
