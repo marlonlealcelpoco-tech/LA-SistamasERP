@@ -8,16 +8,19 @@
 - **SQL com `pg`**: acesso direto ao banco nesta primeira etapa, sem acoplamento desnecessário a ORM.
 - **JWT + bcrypt**: sessão por token e senhas armazenadas apenas como hash seguro.
 - **Zod**: validação de entradas e de variáveis de ambiente.
+- **fast-xml-parser**: leitura de XML de NF-e sem dependência da interface.
 
 A interface continua fora do escopo desta etapa. Ela será implementada separadamente, usando o modelo PowerPoint como referência.
 
 ## Implementado
 
-- Autenticação, primeiro administrador e sessão JWT
-- Perfis e gestão administrativa de usuários
-- Clientes e fornecedores, com pesquisa e controle de status
-- Produtos, preços, estoque mínimo e status
-- Movimentações de estoque transacionais, sem permitir saldo negativo
+- Autenticação, perfis e gestão de usuários
+- Clientes, fornecedores, produtos e estoque
+- Compras manuais em rascunho e confirmação transacional
+- Prévia e importação de XML de NF-e
+- Vínculo ou cadastro de produtos não encontrados no XML
+- Revisão explícita de preço: custo anterior/novo e venda anterior/sugerida
+- Entrada de estoque e atualização de custo somente na confirmação da compra
 - Autorização por perfil aplicada nas rotas
 - Banco PostgreSQL local opcional via Docker Compose
 
@@ -30,14 +33,10 @@ backend/
 │   ├── db/         # conexão com PostgreSQL
 │   ├── inventory/  # movimentos e saldo de estoque
 │   ├── parties/    # clientes e fornecedores
-│   ├── products/   # catálogo e preços
+│   ├── products/   # catálogo, preços e margem
+│   ├── purchases/  # compra manual, XML e confirmação
 │   ├── users/      # gestão de usuários e perfis
-│   ├── app.ts      # composição da API e tratamento de erros
-│   ├── config.ts   # validação da configuração de ambiente
-│   └── server.ts   # inicialização HTTP
-├── .env.example
-├── package.json
-└── tsconfig.json
+│   └── app.ts      # composição da API
 ```
 
-Os próximos módulos (compras, vendas e financeiro) devem seguir a mesma divisão por domínio, usando movimentos de estoque vinculados aos respectivos documentos.
+Vendas e financeiro devem consumir compras confirmadas e movimentações já auditáveis, sem duplicar alterações de estoque.
