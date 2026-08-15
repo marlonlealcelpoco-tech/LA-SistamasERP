@@ -11,22 +11,24 @@
 
 A interface continua fora do escopo desta etapa. Ela será implementada separadamente, usando o modelo PowerPoint como referência.
 
-## Implementado agora
+## Implementado
 
 - Endpoint de saúde: `GET /health`
 - Criação controlada do primeiro administrador: `POST /auth/setup`
-- Login: `POST /auth/login`
-- Consulta do usuário autenticado: `GET /auth/me`
+- Login e consulta de sessão: `POST /auth/login` e `GET /auth/me`
+- Perfis `ADMIN`, `VENDAS`, `ESTOQUE` e `FINANCEIRO`
+- Gestão administrativa de usuários, perfis e status de acesso
 - Banco PostgreSQL local opcional via Docker Compose
-- Migração que habilita IDs automáticos para usuários
+- Migrations para IDs automáticos e perfis iniciais
 
 ## Organização
 
 ```text
 backend/
 ├── src/
-│   ├── auth/       # login, primeiro administrador e acesso a usuários
+│   ├── auth/       # login, senha, sessão e acesso a usuários
 │   ├── db/         # conexão com PostgreSQL
+│   ├── users/      # gestão de usuários e autorização por perfil
 │   ├── app.ts      # composição da API e tratamento de erros
 │   ├── config.ts   # validação da configuração de ambiente
 │   └── server.ts   # inicialização HTTP
@@ -35,4 +37,4 @@ backend/
 └── tsconfig.json
 ```
 
-Os próximos módulos (clientes, produtos, estoque, vendas e financeiro) devem seguir a mesma divisão por domínio, sem misturar regras de negócio com as rotas HTTP.
+Os próximos módulos (clientes, produtos, estoque, vendas e financeiro) devem seguir a mesma divisão por domínio, com autorização por perfil aplicada no nível das rotas.
