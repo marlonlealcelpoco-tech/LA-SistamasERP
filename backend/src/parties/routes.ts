@@ -14,7 +14,7 @@ const partySchema = z.object({
 });
 const statusSchema = z.object({ active: z.boolean() });
 
-function registerPartyRoutes(
+function registerPartyResourceRoutes(
   app: FastifyInstance,
   users: UserRepository,
   parties: PartyRepository,
@@ -53,6 +53,6 @@ function registerPartyRoutes(
 }
 
 export function registerPartyRoutes(app: FastifyInstance, users: UserRepository, parties: PartyRepository) {
-  registerPartyRoutes(app, users, parties, "customers", "/customers", ["ADMIN", "VENDAS", "FINANCEIRO"]);
-  registerPartyRoutes(app, users, parties, "suppliers", "/suppliers", ["ADMIN", "FINANCEIRO"]);
+  registerPartyResourceRoutes(app, users, parties, "customers", "/customers", ["ADMIN", "VENDAS", "FINANCEIRO"]);
+  registerPartyResourceRoutes(app, users, parties, "suppliers", "/suppliers", ["ADMIN", "FINANCEIRO"]);
 }
