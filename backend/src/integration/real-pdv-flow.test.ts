@@ -19,7 +19,9 @@ test("real backend flow: purchase -> stock -> sale -> receipt -> return credit -
     await pool.end();
   });
 
-  await pool.query("TRUNCATE TABLE users, customers, suppliers, products, stock, stock_movements, purchases, purchase_items, sales, sale_items, financial_entries, financial_installments, cash_sessions, cash_events, sale_payments, sales_returns, customer_credit_ledger CASCADE");
+  // Keep the integration fixture aligned with the schema actually migrated by CI.
+  // Installments are represented by financial_entries/settlements in the current model.
+  await pool.query("TRUNCATE TABLE users, customers, suppliers, products, stock, stock_movements, purchases, purchase_items, sales, sale_items, financial_entries, financial_settlements, cash_sessions, cash_events, sale_payments, sales_returns, customer_credit_ledger CASCADE");
 
   const parties = new PartyRepository(pool);
   const products = new ProductRepository(pool);
