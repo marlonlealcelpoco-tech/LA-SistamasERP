@@ -1,0 +1,52 @@
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { requireRoles } from "../auth/authorization.js";
+import { UserRepository } from "../auth/user-repository.js";
+import { PAYMENT_METHODS, SalesRepository } from "./repository.js";
+
+const saleIdSchema = z.object({ id: z.coerce.number().int().positive() });
+const paymentSchema = z.object({
+  paymentMethod: z.enum(PAYMENT_METHODS),
+  amount: z.coerce.number().positive(),
+  dueDate: z.string().date().optional()
+}).superRefine((payment, context) => {
+  if (payment.paymentMethod === "CREDIT" && !payment.dueDate) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Venda a prazo exige data de vencimento.", path: ["dueDate"] });
+  }
+});
+const saleSchema = z.object({
+  cashSessionId: z.coerce.number().int().positive(),
+  customerId: z.coerce.number().int().positive().nullable().optional(),
+  items: z.array(z.object({
+    productId: z.coerce.number().int().positive(),
+    quantity: z.coerce.number().positive(),
+    unitPrice: z.coerce.number().nonnegative()
+  })).min(1),
+  payments: z.array(paymentSchema).min(1)
+}).superRefine((sale, context) => {
+  const itemsTotal = sale.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const paymentsTotal = sale.payments.reduce((sum, payment) => sum + payment.amount, 0);
+  if (Math.abs(itemsTotal - paymentsTotal) > 0.005) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "A soma dos pagamentos deve ser igual ao total da venda.", path: ["payments"] });
+  }
+});
+
+export function registerSalesRoutes(app: FastifyInstance, users: UserRepository, sales: SalesRepository) {
+  app.post("/sales", { onRequest: [app.authenticate] }, async (request, reply) => {
+    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    const input = saleSchema.parse(request.body);
+    const sale = await sales.create({ ...input, sellerId: Number(request.user.sub) });
+    return reply.code(201).send({ sale });
+  });
+
+  app.post("/sales/:id/cancel", { onRequest: [app.authenticate] }, async (request, reply) => {
+    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    const { id } = saleIdSchema.parse(request.params);
+    const result = await sales.cancel(id, Number(request.user.sub));
+
+    if (result === "not_found") return reply.code(404).send({ message: "Venda não encontrada." });
+    if (result === "not_allowed") return reply.code(403).send({ message: "A venda pertence a outro vendedor." });
+    if (result === "already_cancelled") return reply.code(409).send({ message: "A venda já foi cancelada." });
+    return { sale: result };
+  });
+}
