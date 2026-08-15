@@ -148,8 +148,8 @@ export function registerPurchaseRoutes(
     const salePriceUpdates = new Map(input.salePriceUpdates.map((item) => [item.itemId, item.applySuggestedSalePrice]));
     const result = await purchases.confirm(id, salePriceUpdates);
 
-    if (result.kind === "not_found") return reply.code(404).send({ message: "Compra não encontrada." });
-    if (result.kind === "already_confirmed") {
+    if (result.kind !== "success") {
+      if (result.kind === "not_found") return reply.code(404).send({ message: "Compra não encontrada." });
       return reply.code(409).send({ message: "Esta compra já foi confirmada ou não está em rascunho." });
     }
     return { purchase: result.purchase };
