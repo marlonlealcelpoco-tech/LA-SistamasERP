@@ -42,8 +42,8 @@ export class CashRepository {
 
   async open(terminalId: string, sellerId: number, openingAmount: number): Promise<CashSession | "already_open"> {
     const existing = await this.pool.query<{ id: number }>(
-      "SELECT id FROM cash_sessions WHERE terminal_id = $1 AND seller_id = $2 AND status = 'OPEN' LIMIT 1",
-      [terminalId, sellerId]
+      "SELECT id FROM cash_sessions WHERE terminal_id = $1 AND status = 'OPEN' LIMIT 1",
+      [terminalId]
     );
     if (existing.rows[0]) return "already_open";
 
