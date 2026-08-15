@@ -6,14 +6,19 @@ Sistema de gestão empresarial modular, preparado para crescer com a operação 
 
 Construir uma plataforma ERP com módulos integrados para cadastro, estoque, vendas, compras, financeiro, clientes, fornecedores, usuários e relatórios.
 
-## Estrutura inicial
+## Estado atual
 
-- `frontend/` — interface web do ERP
-- `backend/` — API e regras de negócio
-- `database/` — modelos, migrations e seeds
-- `docs/` — documentação do projeto
-- `infra/` — configurações de ambiente e implantação
-- `tests/` — testes automatizados
+A primeira versão funcional do backend está disponível, com PostgreSQL, autenticação por JWT e criação segura do administrador inicial. A interface visual ainda não foi criada: ela será desenvolvida posteriormente com base no modelo PowerPoint do projeto.
+
+Consulte [a documentação do backend](backend/README.md) para executar a API localmente e conhecer os endpoints.
+
+## Estrutura
+
+- `backend/` — API REST e regras de negócio
+- `database/` — schema e migrations PostgreSQL
+- `docker-compose.yml` — PostgreSQL local para desenvolvimento
+- `docs/` — documentação futura
+- `frontend/` — reservado para a interface futura
 
 ## Módulos previstos
 
@@ -28,14 +33,6 @@ Construir uma plataforma ERP com módulos integrados para cadastro, estoque, ven
 9. Financeiro
 10. Relatórios
 11. Configurações
-
-## Arquitetura
-
-O projeto será desenvolvido de forma modular, com frontend separado do backend e uma camada de banco de dados preparada para evolução.
-
-## Status
-
-🚧 Estrutura inicial criada. Desenvolvimento dos módulos em andamento.
 
 ## Licença
 
