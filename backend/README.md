@@ -7,86 +7,71 @@
 
 ## Início rápido
 
-1. Na raiz do projeto, inicie o banco:
+1. Na raiz do projeto, inicie o banco com `docker compose up -d`.
+2. Na pasta `backend`, crie `.env` a partir de `.env.example` e defina `JWT_SECRET` e `BOOTSTRAP_TOKEN`.
+3. Execute `npm install` e `npm run dev`.
 
-   ```bash
-   docker compose up -d
-   ```
+A API estará em `http://localhost:3000`. Todas as rotas autenticadas usam `Authorization: Bearer <token>`.
 
-2. Entre na pasta `backend`, crie o arquivo de ambiente a partir de `.env.example` e defina valores secretos para `JWT_SECRET` e `BOOTSTRAP_TOKEN`.
+## Autenticação, usuários e cadastros
 
-3. Instale as dependências e inicie a API:
+| Recurso | Rotas | Acesso |
+| --- | --- | --- |
+| Saúde | `GET /health` | Público |
+| Sessão | `POST /auth/setup`, `POST /auth/login`, `GET /auth/me` | Conforme rota |
+| Usuários | `GET/POST /users`, `PUT /users/:id/roles`, `PATCH /users/:id/status` | ADMIN |
+| Clientes | `GET/POST /customers`, `PUT /customers/:id`, `PATCH /customers/:id/status` | ADMIN, VENDAS, FINANCEIRO |
+| Fornecedores | `GET/POST /suppliers`, `PUT /suppliers/:id`, `PATCH /suppliers/:id/status` | ADMIN, FINANCEIRO |
 
-   ```bash
-   npm install
-   npm run dev
-   ```
+Clientes e fornecedores aceitam o parâmetro opcional `?search=` para pesquisa por nome, documento ou e-mail.
 
-A API estará em `http://localhost:3000`.
-
-## Autenticação e usuários
-
-| Método | Rota | Acesso | Uso |
-| --- | --- | --- | --- |
-| GET | `/health` | Público | Verifica API e banco |
-| POST | `/auth/setup` | Público com token | Cria o primeiro administrador uma única vez |
-| POST | `/auth/login` | Público | Autentica um usuário |
-| GET | `/auth/me` | Autenticado | Retorna usuário e perfis |
-| GET | `/users` | ADMIN | Lista usuários |
-| POST | `/users` | ADMIN | Cria usuário e define perfis |
-| PUT | `/users/:id/roles` | ADMIN | Substitui os perfis de um usuário |
-| PATCH | `/users/:id/status` | ADMIN | Ativa ou desativa um usuário |
-
-Os perfis iniciais são `ADMIN`, `VENDAS`, `ESTOQUE` e `FINANCEIRO`.
-
-## Clientes e fornecedores
-
-As duas rotas aceitam o parâmetro opcional `?search=` para pesquisa por nome, documento ou e-mail.
+## Produtos e estoque
 
 | Método | Rota | Acesso | Uso |
 | --- | --- | --- | --- |
-| GET | `/customers` | ADMIN, VENDAS, FINANCEIRO | Lista clientes |
-| POST | `/customers` | ADMIN, VENDAS, FINANCEIRO | Cria cliente |
-| PUT | `/customers/:id` | ADMIN, VENDAS, FINANCEIRO | Atualiza cliente |
-| PATCH | `/customers/:id/status` | ADMIN, VENDAS, FINANCEIRO | Ativa/desativa cliente |
-| GET | `/suppliers` | ADMIN, FINANCEIRO | Lista fornecedores |
-| POST | `/suppliers` | ADMIN, FINANCEIRO | Cria fornecedor |
-| PUT | `/suppliers/:id` | ADMIN, FINANCEIRO | Atualiza fornecedor |
-| PATCH | `/suppliers/:id/status` | ADMIN, FINANCEIRO | Ativa/desativa fornecedor |
+| GET | `/products` | ADMIN, VENDAS, ESTOQUE, FINANCEIRO | Lista produtos; aceita `?search=` |
+| POST | `/products` | ADMIN, ESTOQUE | Cria produto e saldo inicial zerado |
+| PUT | `/products/:id` | ADMIN, ESTOQUE | Atualiza dados comerciais |
+| PATCH | `/products/:id/status` | ADMIN, ESTOQUE | Ativa/desativa produto |
+| PUT | `/products/:id/minimum-stock` | ADMIN, ESTOQUE | Define estoque mínimo |
+| GET | `/products/:productId/movements` | ADMIN, ESTOQUE, FINANCEIRO | Histórico de movimentos |
+| POST | `/inventory/movements` | ADMIN, ESTOQUE | Registra entrada, saída ou ajuste |
 
-Exemplo de cadastro:
-
-```json
-{
-  "name": "Empresa Exemplo LTDA",
-  "document": "12.345.678/0001-90",
-  "email": "contato@exemplo.com",
-  "phone": "+55 11 99999-9999"
-}
-```
-
-### Criar o primeiro administrador
-
-A rota `/auth/setup` só funciona quando ainda não existe usuário e exige o `BOOTSTRAP_TOKEN`. O primeiro usuário recebe automaticamente o perfil `ADMIN`.
+Exemplo de produto:
 
 ```json
 {
-  "name": "Administrador",
-  "email": "admin@empresa.com",
-  "password": "uma-senha-forte",
-  "bootstrapToken": "o-mesmo-valor-de-BOOTSTRAP_TOKEN"
+  "code": "PROD-001",
+  "name": "Produto Exemplo",
+  "description": "Descrição opcional",
+  "unit": "UN",
+  "cost": 25.50,
+  "salePrice": 49.90
 }
 ```
 
-Após o login, envie o token recebido no cabeçalho:
+Exemplo de movimentação:
 
-```text
-Authorization: Bearer <token>
+```json
+{
+  "productId": 1,
+  "type": "ENTRY",
+  "quantity": 10,
+  "reference": "NF-123",
+  "notes": "Entrada de compra"
+}
 ```
+
+Tipos de movimento:
+
+- `ENTRY`: soma uma quantidade positiva ao saldo.
+- `EXIT`: subtrai uma quantidade positiva; a API recusa saldo negativo.
+- `ADJUSTMENT`: aceita valor positivo ou negativo para correções inventariais.
 
 ## Segurança e decisões
 
 - Senhas nunca são salvas em texto: são processadas com bcrypt.
 - O segredo JWT e o token de inicialização são variáveis de ambiente; não devem ser enviados ao GitHub.
-- O CORS fica restrito à origem configurada em `CORS_ORIGIN`; antes da interface existir, ele pode ficar vazio.
-- O administrador não pode desativar o próprio acesso nem alterar seus próprios perfis pela API, evitando perda acidental de administração.
+- O CORS fica restrito à origem configurada em `CORS_ORIGIN`.
+- Produtos são criados junto com seu registro de estoque em uma única transação.
+- Movimentações bloqueiam o saldo do produto durante a operação, preservando a consistência do estoque.
