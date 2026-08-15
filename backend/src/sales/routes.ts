@@ -24,6 +24,10 @@ const saleSchema = z.object({
   })).min(1),
   payments: z.array(paymentSchema).min(1)
 }).superRefine((sale, context) => {
+  const hasCreditSale = sale.payments.some((payment) => payment.paymentMethod === "CREDIT");
+  if (hasCreditSale && !sale.customerId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Venda a prazo exige cliente identificado.", path: ["customerId"] });
+  }
   const itemsTotal = sale.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const paymentsTotal = sale.payments.reduce((sum, payment) => sum + payment.amount, 0);
   if (Math.abs(itemsTotal - paymentsTotal) > 0.005) {
@@ -31,16 +35,19 @@ const saleSchema = z.object({
   }
 });
 
+const PDV_ROLES = ["ADMIN", "GERENTE", "SUPERVISOR", "VENDAS"] as const;
+const SUPERVISOR_ROLES = ["ADMIN", "GERENTE", "SUPERVISOR"] as const;
+
 export function registerSalesRoutes(app: FastifyInstance, users: UserRepository, sales: SalesRepository) {
   app.post("/sales", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    if (!(await requireRoles(request, reply, users, [...PDV_ROLES]))) return;
     const input = saleSchema.parse(request.body);
     const sale = await sales.create({ ...input, sellerId: Number(request.user.sub) });
     return reply.code(201).send({ sale });
   });
 
   app.post("/sales/:id/cancel", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS"]))) return;
+    if (!(await requireRoles(request, reply, users, [...SUPERVISOR_ROLES]))) return;
     const { id } = saleIdSchema.parse(request.params);
     const result = await sales.cancel(id, Number(request.user.sub));
 
