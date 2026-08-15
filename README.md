@@ -8,17 +8,9 @@ Construir uma plataforma ERP com módulos integrados para cadastro, estoque, ven
 
 ## Estado atual
 
-O backend já possui PostgreSQL, autenticação por JWT, usuários com perfis de acesso, clientes, fornecedores, produtos e movimentação segura de estoque. A interface visual ainda não foi criada: ela será desenvolvida posteriormente com base no modelo PowerPoint do projeto.
+O backend possui autenticação, usuários e permissões, cadastros, produtos, estoque e compras manuais ou por XML de NF-e. A importação apresenta a comparação de preços e exige confirmação antes de alterar custo, venda ou saldo. A interface visual ainda não foi criada: ela será desenvolvida posteriormente com base no modelo PowerPoint do projeto.
 
 Consulte [a documentação do backend](backend/README.md) para executar a API localmente e conhecer os endpoints.
-
-## Estrutura
-
-- `backend/` — API REST e regras de negócio
-- `database/` — schema e migrations PostgreSQL
-- `docker-compose.yml` — PostgreSQL local para desenvolvimento
-- `docs/` — documentação futura
-- `frontend/` — reservado para a interface futura
 
 ## Módulos previstos
 
@@ -28,7 +20,7 @@ Consulte [a documentação do backend](backend/README.md) para executar a API lo
 4. Fornecedores — concluído na primeira versão
 5. Produtos e serviços — concluído na primeira versão
 6. Estoque — concluído na primeira versão
-7. Compras
+7. Compras — concluído na primeira versão
 8. Vendas
 9. Financeiro
 10. Relatórios
