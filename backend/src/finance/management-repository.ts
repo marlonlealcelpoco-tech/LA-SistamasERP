@@ -1,5 +1,6 @@
 import type { Pool } from "pg";
 import { FinancialMovementRepository } from "./financial-movement-repository";
+import { buildDre } from "./management-reports";
 
 export class FinancialManagementRepository {
   private readonly movements: FinancialMovementRepository;
@@ -42,6 +43,43 @@ export class FinancialManagementRepository {
         expense: Number(values.expense.toFixed(2)),
         balance: Number(balance.toFixed(2))
       };
+    });
+  }
+
+  async dre(startDate: string, endDate: string) {
+    const [sales, returns, cogs, expenses] = await Promise.all([
+      this.pool.query<{ amount: string }>(`
+        SELECT COALESCE(SUM(total),0)::numeric AS amount
+        FROM sales
+        WHERE status = 'CONFIRMED'
+          AND created_at::date BETWEEN $1::date AND $2::date`, [startDate, endDate]),
+      this.pool.query<{ amount: string }>(`
+        SELECT COALESCE(SUM(sr.amount),0)::numeric AS amount
+        FROM sales_returns sr
+        JOIN sales s ON s.id = sr.sale_id
+        WHERE s.created_at::date BETWEEN $1::date AND $2::date`, [startDate, endDate]),
+      this.pool.query<{ amount: string }>(`
+        SELECT COALESCE(SUM(si.quantity * p.cost),0)::numeric AS amount
+        FROM sale_items si
+        JOIN sales s ON s.id = si.sale_id
+        JOIN products p ON p.id = si.product_id
+        WHERE s.status = 'CONFIRMED'
+          AND s.created_at::date BETWEEN $1::date AND $2::date`, [startDate, endDate]),
+      this.pool.query<{ amount: string }>(`
+        SELECT COALESCE(SUM(fe.amount),0)::numeric AS amount
+        FROM financial_entries fe
+        LEFT JOIN financial_categories fc ON fc.id = fe.category_id
+        WHERE fe.type = 'PAYABLE'
+          AND fe.status <> 'CANCELLED'
+          AND fe.created_at::date BETWEEN $1::date AND $2::date
+          AND COALESCE(fc.code, '') NOT IN ('COMPRAS')`, [startDate, endDate])
+    ]);
+
+    return buildDre({
+      grossRevenue: Number(sales.rows[0].amount),
+      salesReturns: Number(returns.rows[0].amount),
+      costOfGoodsSold: Number(cogs.rows[0].amount),
+      operatingExpenses: Number(expenses.rows[0].amount)
     });
   }
 
