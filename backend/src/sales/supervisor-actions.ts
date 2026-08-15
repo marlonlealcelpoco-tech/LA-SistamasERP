@@ -23,11 +23,8 @@ export class SupervisorActionsRepository {
       if (totalPaid > 0 && sale.rows[0].cash_session_id) {
         const refund = Math.min(amount, totalPaid);
         const immediate = payments.rows.find(p => !["CREDIT", "STORE_CREDIT"].includes(p.payment_method));
-        if (immediate) {
-          await client.query(`INSERT INTO cash_events (cash_session_id, sale_id, type, payment_method, amount, description) VALUES ($1, $2, 'ITEM_CANCELLATION', $3, $4, $5)`, [sale.rows[0].cash_session_id, input.saleId, immediate.payment_method, -refund, `Estorno de item autorizado por supervisor: ${input.reason}`]);
-        } else if (sale.rows[0].customer_id) {
-          await client.query(`INSERT INTO customer_credit_ledger (customer_id, type, amount, sale_id) VALUES ($1, 'RETURN_CREDIT', $2, $3)`, [sale.rows[0].customer_id, refund, input.saleId]);
-        }
+        if (immediate) await client.query(`INSERT INTO cash_events (cash_session_id, sale_id, type, payment_method, amount, description) VALUES ($1, $2, 'ITEM_CANCELLATION', $3, $4, $5)`, [sale.rows[0].cash_session_id, input.saleId, immediate.payment_method, -refund, `Estorno de item autorizado por supervisor: ${input.reason}`]);
+        else if (sale.rows[0].customer_id) await client.query(`INSERT INTO customer_credit_ledger (customer_id, type, amount, sale_id) VALUES ($1, 'RETURN_CREDIT', $2, $3)`, [sale.rows[0].customer_id, refund, input.saleId]);
       }
       await client.query(`INSERT INTO pdv_authorizations (action, sale_id, sale_item_id, authorized_by, amount, reason) VALUES ('CANCEL_ITEM', $1, $2, $3, $4, $5)`, [input.saleId, input.saleItemId, input.supervisorId, amount, input.reason]);
       await client.query("COMMIT");
@@ -46,9 +43,9 @@ export class SupervisorActionsRepository {
     return { authorizationId: result.rows[0].id, saleId: input.saleId, amount: input.amount };
   }
 
-  async authorizeExchange(input: ReturnInput & { supervisorId: number; reason: string }): Promise<{ returnId: number; creditAmount: number; authorizationId: number }> {
+  async authorizeExchange(input: ReturnInput & { supervisorId: number; authorizationReason: string }): Promise<{ returnId: number; creditAmount: number; authorizationId: number }> {
     const result = await new SalesReturnRepository(this.pool).create(input);
-    const authorization = await this.pool.query<{ id: number }>(`INSERT INTO pdv_authorizations (action, sale_id, authorized_by, amount, reason) VALUES ('EXCHANGE', $1, $2, $3, $4) RETURNING id`, [input.saleId, input.supervisorId, result.creditAmount, input.reason]);
+    const authorization = await this.pool.query<{ id: number }>(`INSERT INTO pdv_authorizations (action, sale_id, authorized_by, amount, reason) VALUES ('EXCHANGE', $1, $2, $3, $4) RETURNING id`, [input.saleId, input.supervisorId, result.creditAmount, input.authorizationReason]);
     return { ...result, authorizationId: authorization.rows[0].id };
   }
 }
