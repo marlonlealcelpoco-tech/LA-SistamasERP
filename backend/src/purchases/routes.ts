@@ -48,7 +48,7 @@ export function registerPurchaseRoutes(
   purchases: PurchaseRepository,
   products: ProductRepository
 ) {
-  const purchaseRoles = ["ADMIN", "ESTOQUE"] as const;
+  const purchaseRoles = ["ADMIN", "GERENTE", "ESTOQUE"] as const;
 
   app.post("/purchases", { onRequest: [app.authenticate] }, async (request, reply) => {
     if (!(await requireRoles(request, reply, users, [...purchaseRoles]))) return;
