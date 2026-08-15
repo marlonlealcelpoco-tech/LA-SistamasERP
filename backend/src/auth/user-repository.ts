@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 
-export const ROLE_NAMES = ["ADMIN", "GERENTE", "VENDAS", "ESTOQUE", "FINANCEIRO"] as const;
+export const ROLE_NAMES = ["ADMIN", "GERENTE", "SUPERVISOR", "VENDAS", "ESTOQUE", "FINANCEIRO"] as const;
 export type UserRole = (typeof ROLE_NAMES)[number];
 
 export type UserRecord = {
@@ -102,6 +102,10 @@ export class UserRepository {
       const user = existing.rows[0];
       if (!user) { await client.query("ROLLBACK"); return undefined; }
       await client.query("DELETE FROM user_roles WHERE user_id = $1", [userId]);
+      const assigned = await client.query<{ name: UserRole }>(
+        "SELECT name FROM roles WHERE name = ANY($1::text[])", [roles]
+      );
+      if (assigned.rows.length !== roles.length) throw new Error("Um ou mais perfis não existem.");
       await client.query(
         "INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE name = ANY($2::text[])",
         [userId, roles]
