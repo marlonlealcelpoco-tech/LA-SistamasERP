@@ -6,6 +6,8 @@ import { ZodError } from "zod";
 import type { Environment } from "./config.js";
 import { registerAuthRoutes } from "./auth/routes.js";
 import { UserRepository } from "./auth/user-repository.js";
+import { CashRepository } from "./cash/repository.js";
+import { registerCashRoutes } from "./cash/routes.js";
 import { InventoryRepository } from "./inventory/repository.js";
 import { registerInventoryRoutes } from "./inventory/routes.js";
 import { PartyRepository } from "./parties/repository.js";
@@ -14,6 +16,8 @@ import { ProductRepository } from "./products/repository.js";
 import { registerProductRoutes } from "./products/routes.js";
 import { PurchaseRepository } from "./purchases/repository.js";
 import { registerPurchaseRoutes } from "./purchases/routes.js";
+import { SalesRepository } from "./sales/repository.js";
+import { registerSalesRoutes } from "./sales/routes.js";
 import { registerUserRoutes } from "./users/routes.js";
 
 declare module "fastify" {
@@ -29,6 +33,8 @@ export function buildApp(environment: Environment, pool: Pool) {
   const products = new ProductRepository(pool);
   const inventory = new InventoryRepository(pool);
   const purchases = new PurchaseRepository(pool);
+  const cash = new CashRepository(pool);
+  const sales = new SalesRepository(pool);
 
   app.register(cors, { origin: environment.CORS_ORIGIN ?? false });
   app.register(jwt, { secret: environment.JWT_SECRET });
@@ -48,6 +54,8 @@ export function buildApp(environment: Environment, pool: Pool) {
   registerProductRoutes(app, users, products);
   registerInventoryRoutes(app, users, inventory);
   registerPurchaseRoutes(app, users, purchases, products);
+  registerCashRoutes(app, users, cash);
+  registerSalesRoutes(app, users, sales);
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
