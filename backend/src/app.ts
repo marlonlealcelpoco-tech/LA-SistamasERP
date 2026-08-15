@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import Fastify, { type FastifyRequest } from "fastify";
 import type { Pool } from "pg";
+import { ZodError } from "zod";
 import type { Environment } from "./config.js";
 import { registerAuthRoutes } from "./auth/routes.js";
 import { UserRepository } from "./auth/user-repository.js";
@@ -27,10 +28,10 @@ export function buildApp(environment: Environment, pool: Pool) {
     return { status: "ok" };
   });
 
-  app.register(registerAuthRoutes, new UserRepository(pool), environment);
+  registerAuthRoutes(app, new UserRepository(pool), environment);
 
   app.setErrorHandler((error, _request, reply) => {
-    if (error.name === "ZodError") {
+    if (error instanceof ZodError) {
       return reply.code(400).send({ message: "Dados inválidos.", details: error.issues });
     }
     if (error.code === "23505") {
