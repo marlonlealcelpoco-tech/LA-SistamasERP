@@ -12,6 +12,7 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
       - ./database/migrations/001_enable_user_identity.sql:/docker-entrypoint-initdb.d/002-enable-user-identity.sql:ro
       - ./database/migrations/002_seed_roles.sql:/docker-entrypoint-initdb.d/003-seed-roles.sql:ro
+      - ./database/migrations/003_enable_party_identity.sql:/docker-entrypoint-initdb.d/004-enable-party-identity.sql:ro
 
 volumes:
   postgres_data:
