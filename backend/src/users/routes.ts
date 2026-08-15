@@ -1,7 +1,8 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { requireRoles } from "../auth/authorization.js";
 import { hashPassword } from "../auth/password.js";
-import { ROLE_NAMES, type UserRole, UserRepository } from "../auth/user-repository.js";
+import { ROLE_NAMES, UserRepository } from "../auth/user-repository.js";
 
 const rolesSchema = z.array(z.enum(ROLE_NAMES)).min(1).transform((roles) => [...new Set(roles)]);
 const userIdSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -16,27 +17,14 @@ const createUserSchema = z.object({
 const updateRolesSchema = z.object({ roles: rolesSchema });
 const updateStatusSchema = z.object({ active: z.boolean() });
 
-async function requireAdministrator(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  users: UserRepository
-): Promise<boolean> {
-  const roles = await users.findRoleNames(Number(request.user.sub));
-  if (!roles.includes("ADMIN")) {
-    reply.code(403).send({ message: "Acesso restrito a administradores." });
-    return false;
-  }
-  return true;
-}
-
 export function registerUserRoutes(app: FastifyInstance, users: UserRepository) {
   app.get("/users", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireAdministrator(request, reply, users))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN"]))) return;
     return { users: await users.list() };
   });
 
   app.post("/users", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireAdministrator(request, reply, users))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN"]))) return;
 
     const input = createUserSchema.parse(request.body);
     const user = await users.createWithRoles(
@@ -50,7 +38,7 @@ export function registerUserRoutes(app: FastifyInstance, users: UserRepository) 
   });
 
   app.put("/users/:id/roles", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireAdministrator(request, reply, users))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN"]))) return;
 
     const { id } = userIdSchema.parse(request.params);
     if (id === Number(request.user.sub)) {
@@ -65,7 +53,7 @@ export function registerUserRoutes(app: FastifyInstance, users: UserRepository) 
   });
 
   app.patch("/users/:id/status", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireAdministrator(request, reply, users))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN"]))) return;
 
     const { id } = userIdSchema.parse(request.params);
     if (id === Number(request.user.sub)) {
