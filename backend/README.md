@@ -24,18 +24,29 @@
 
 A API estará em `http://localhost:3000`.
 
-## Endpoints iniciais
+## Autenticação e usuários
 
-| Método | Rota | Uso |
-| --- | --- | --- |
-| GET | `/health` | Verifica API e banco de dados |
-| POST | `/auth/setup` | Cria o primeiro administrador, uma única vez |
-| POST | `/auth/login` | Autentica um usuário |
-| GET | `/auth/me` | Retorna o usuário do token JWT |
+| Método | Rota | Acesso | Uso |
+| --- | --- | --- | --- |
+| GET | `/health` | Público | Verifica API e banco |
+| POST | `/auth/setup` | Público com token | Cria o primeiro administrador uma única vez |
+| POST | `/auth/login` | Público | Autentica um usuário |
+| GET | `/auth/me` | Autenticado | Retorna usuário e perfis |
+| GET | `/users` | ADMIN | Lista usuários |
+| POST | `/users` | ADMIN | Cria usuário e define perfis |
+| PUT | `/users/:id/roles` | ADMIN | Substitui os perfis de um usuário |
+| PATCH | `/users/:id/status` | ADMIN | Ativa ou desativa um usuário |
+
+Os perfis iniciais são:
+
+- `ADMIN`: acesso completo e gestão de usuários.
+- `VENDAS`: operações comerciais.
+- `ESTOQUE`: produtos e estoque.
+- `FINANCEIRO`: operações financeiras.
 
 ### Criar o primeiro administrador
 
-A rota só funciona quando ainda não existe usuário e exige o `BOOTSTRAP_TOKEN`. Guarde esse token fora do código-fonte.
+A rota `/auth/setup` só funciona quando ainda não existe usuário e exige o `BOOTSTRAP_TOKEN`. O primeiro usuário recebe automaticamente o perfil `ADMIN`.
 
 ```json
 {
@@ -52,9 +63,22 @@ Após o login, envie o token recebido no cabeçalho:
 Authorization: Bearer <token>
 ```
 
+### Criar um usuário
+
+Apenas um administrador autenticado pode criar usuários:
+
+```json
+{
+  "name": "Usuário de Estoque",
+  "email": "estoque@empresa.com",
+  "password": "uma-senha-forte",
+  "roles": ["ESTOQUE"]
+}
+```
+
 ## Segurança e decisões
 
 - Senhas nunca são salvas em texto: são processadas com bcrypt.
 - O segredo JWT e o token de inicialização são variáveis de ambiente; não devem ser enviados ao GitHub.
 - O CORS fica restrito à origem configurada em `CORS_ORIGIN`; antes da interface existir, ele pode ficar vazio.
-- A criação de usuários adicionais e permissões será entregue junto do módulo de usuários, depois da definição das regras de acesso.
+- O administrador não pode desativar o próprio acesso nem alterar seus próprios perfis pela API, evitando perda acidental de administração.
