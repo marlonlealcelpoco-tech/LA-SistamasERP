@@ -12,7 +12,8 @@ const productSchema = z.object({
   description: z.string().trim().max(10_000).nullable().optional(),
   unit: z.string().trim().min(1).max(20).default("UN"),
   cost: z.coerce.number().nonnegative(),
-  salePrice: z.coerce.number().nonnegative()
+  salePrice: z.coerce.number().nonnegative(),
+  profitMarginPct: z.coerce.number().min(0).max(999.99).default(0)
 });
 const statusSchema = z.object({ active: z.boolean() });
 const minimumSchema = z.object({ minimumQuantity: z.coerce.number().nonnegative() });
