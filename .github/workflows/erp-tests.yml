@@ -32,7 +32,7 @@ jobs:
 
       - name: Verify official authorization matrix
         working-directory: backend
-        run: node --import tsx --test src/auth/role-policy.test.ts
+        run: node --import tsx --test src/auth/role-policy.test.ts src/auth/official-authorization-matrix.test.ts
 
       - name: Verify integration closing rules
         working-directory: backend
