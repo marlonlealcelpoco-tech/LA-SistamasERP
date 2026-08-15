@@ -8,7 +8,7 @@ Construir uma plataforma ERP com módulos integrados para cadastro, estoque, ven
 
 ## Estado atual
 
-A primeira versão funcional do backend está disponível, com PostgreSQL, autenticação por JWT e criação segura do administrador inicial. A interface visual ainda não foi criada: ela será desenvolvida posteriormente com base no modelo PowerPoint do projeto.
+O backend já possui PostgreSQL, autenticação por JWT e gestão de usuários com perfis de acesso. A interface visual ainda não foi criada: ela será desenvolvida posteriormente com base no modelo PowerPoint do projeto.
 
 Consulte [a documentação do backend](backend/README.md) para executar a API localmente e conhecer os endpoints.
 
@@ -23,7 +23,7 @@ Consulte [a documentação do backend](backend/README.md) para executar a API lo
 ## Módulos previstos
 
 1. Dashboard
-2. Usuários e permissões
+2. Usuários e permissões — concluído na primeira versão
 3. Clientes
 4. Fornecedores
 5. Produtos e serviços
