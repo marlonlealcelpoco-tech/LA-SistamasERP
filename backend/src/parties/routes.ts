@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireRoles } from "../auth/authorization.js";
 import { UserRepository } from "../auth/user-repository.js";
+import { ROLE_POLICY } from "../auth/role-policy.js";
 import { PartyRepository, type PartyType } from "./repository.js";
 
 const idSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -53,7 +54,6 @@ function registerPartyResourceRoutes(
 }
 
 export function registerPartyRoutes(app: FastifyInstance, users: UserRepository, parties: PartyRepository) {
-  const customerRoles = ["ADMIN", "GERENTE", "SUPERVISOR", "VENDAS", "ESTOQUE"] as const;
-  registerPartyResourceRoutes(app, users, parties, "customers", "/customers", customerRoles);
-  registerPartyResourceRoutes(app, users, parties, "suppliers", "/suppliers", ["ADMIN", "GERENTE", "FINANCEIRO"]);
+  registerPartyResourceRoutes(app, users, parties, "customers", "/customers", ROLE_POLICY.CUSTOMER_MAINTENANCE);
+  registerPartyResourceRoutes(app, users, parties, "suppliers", "/suppliers", ROLE_POLICY.PURCHASE_MAINTENANCE);
 }
