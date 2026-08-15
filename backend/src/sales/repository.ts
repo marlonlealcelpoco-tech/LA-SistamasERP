@@ -33,11 +33,18 @@ export class SalesRepository {
         [input.cashSessionId]
       );
       if (!session.rows[0]) throw new Error("Caixa não está aberto.");
-      if (session.rows[0].seller_id !== input.sellerId) {
-        throw new Error("A venda deve ser registrada no caixa do vendedor.");
+      if (session.rows[0].seller_id !== input.sellerId) throw new Error("A venda deve ser registrada no caixa do vendedor.");
+      if (!input.items.length) throw new Error("A venda precisa ter pelo menos um item.");
+
+      const total = Number(input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0).toFixed(2));
+      const paymentTotal = Number(input.payments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2));
+      if (!input.payments.length || Math.abs(paymentTotal - total) > 0.005) {
+        throw new Error("A soma dos pagamentos deve ser igual ao total da venda.");
+      }
+      if (input.payments.some(p => p.paymentMethod === "CREDIT") && !input.customerId) {
+        throw new Error("Venda a prazo exige cliente informado.");
       }
 
-      const total = input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
       const sale = await client.query<SaleRecord>(
         `INSERT INTO sales (customer_id, seller_id, cash_session_id, status, total)
          VALUES ($1, $2, $3, 'CONFIRMED', $4)
@@ -46,6 +53,7 @@ export class SalesRepository {
       );
 
       for (const item of input.items) {
+        if (item.quantity <= 0 || item.unitPrice < 0) throw new Error("Quantidade/preço inválido.");
         await this.decreaseStock(client, item.productId, item.quantity);
         await client.query(
           `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total)
@@ -60,17 +68,35 @@ export class SalesRepository {
       }
 
       for (const payment of input.payments) {
+        if (payment.amount <= 0) throw new Error("Valor de pagamento inválido.");
         await client.query(
           `INSERT INTO sale_payments (sale_id, payment_method, amount, due_date)
            VALUES ($1, $2, $3, $4)`,
           [sale.rows[0].id, payment.paymentMethod, payment.amount, payment.dueDate ?? null]
         );
-        const eventType = payment.paymentMethod === "CREDIT" ? "CREDIT_SALE" : "SALE_PAYMENT";
-        await client.query(
-          `INSERT INTO cash_events (cash_session_id, sale_id, type, payment_method, amount, description)
-           VALUES ($1, $2, $3, $4, $5, 'Recebimento de venda')`,
-          [input.cashSessionId, sale.rows[0].id, eventType, payment.paymentMethod, payment.amount]
-        );
+
+        if (payment.paymentMethod === "CREDIT") {
+          const ar = await client.query<{ id: number }>(
+            `INSERT INTO financial_entries
+              (type, description, amount, due_date, customer_id, source, document_number, sale_id)
+             VALUES ('RECEIVABLE', $1, $2, $3, $4, 'SALE', $5, $6)
+             RETURNING id`,
+            [`Venda ${sale.rows[0].id} - Conta a Receber`, payment.amount, payment.dueDate ?? null,
+              input.customerId, `VENDA-${sale.rows[0].id}`, sale.rows[0].id]
+          );
+          await client.query(
+            `INSERT INTO financial_installments
+              (financial_entry_id, installment_number, due_date, amount, settled_amount, status)
+             VALUES ($1, 1, $2, $3, 0, 'PENDING')`,
+            [ar.rows[0].id, payment.dueDate ?? null, payment.amount]
+          );
+        } else {
+          await client.query(
+            `INSERT INTO cash_events (cash_session_id, sale_id, type, payment_method, amount, description)
+             VALUES ($1, $2, 'SALE_PAYMENT', $3, $4, 'Recebimento de venda')`,
+            [input.cashSessionId, sale.rows[0].id, payment.paymentMethod, payment.amount]
+          );
+        }
       }
 
       await client.query("COMMIT");
@@ -89,26 +115,15 @@ export class SalesRepository {
       await client.query("BEGIN");
       const sale = await client.query<SaleRecord>(
         `SELECT id, customer_id, seller_id, cash_session_id, status, total, created_at
-         FROM sales WHERE id = $1 FOR UPDATE`,
-        [saleId]
+         FROM sales WHERE id = $1 FOR UPDATE`, [saleId]
       );
       const record = sale.rows[0];
-      if (!record) {
-        await client.query("ROLLBACK");
-        return "not_found";
-      }
-      if (record.seller_id !== sellerId) {
-        await client.query("ROLLBACK");
-        return "not_allowed";
-      }
-      if (record.status === "CANCELLED") {
-        await client.query("ROLLBACK");
-        return "already_cancelled";
-      }
+      if (!record) { await client.query("ROLLBACK"); return "not_found"; }
+      if (record.seller_id !== sellerId) { await client.query("ROLLBACK"); return "not_allowed"; }
+      if (record.status === "CANCELLED") { await client.query("ROLLBACK"); return "already_cancelled"; }
 
       const items = await client.query<{ product_id: number; quantity: string }>(
-        "SELECT product_id, quantity FROM sale_items WHERE sale_id = $1",
-        [saleId]
+        "SELECT product_id, quantity FROM sale_items WHERE sale_id = $1", [saleId]
       );
       for (const item of items.rows) {
         await client.query("UPDATE stock SET quantity = quantity + $2 WHERE product_id = $1", [item.product_id, item.quantity]);
@@ -120,8 +135,7 @@ export class SalesRepository {
       }
 
       const payments = await client.query<{ payment_method: string; amount: string }>(
-        "SELECT payment_method, amount FROM sale_payments WHERE sale_id = $1",
-        [saleId]
+        "SELECT payment_method, amount FROM sale_payments WHERE sale_id = $1", [saleId]
       );
       for (const payment of payments.rows) {
         await client.query(
@@ -131,33 +145,31 @@ export class SalesRepository {
         );
       }
 
+      await client.query(
+        `UPDATE financial_entries SET status = 'CANCELLED'
+         WHERE sale_id = $1 AND type = 'RECEIVABLE' AND status <> 'CANCELLED'`, [saleId]
+      );
+
       const cancelled = await client.query<SaleRecord>(
         `UPDATE sales SET status = 'CANCELLED', cancelled_at = CURRENT_TIMESTAMP
          WHERE id = $1
-         RETURNING id, customer_id, seller_id, cash_session_id, status, total, created_at`,
-        [saleId]
+         RETURNING id, customer_id, seller_id, cash_session_id, status, total, created_at`, [saleId]
       );
       await client.query("COMMIT");
       return cancelled.rows[0];
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
-    } finally {
-      client.release();
-    }
+    } finally { client.release(); }
   }
 
   private async decreaseStock(client: PoolClient, productId: number, quantity: number): Promise<void> {
     const product = await client.query<{ id: number }>(
-      "SELECT id FROM products WHERE id = $1 AND active = TRUE FOR UPDATE",
-      [productId]
+      "SELECT id FROM products WHERE id = $1 AND active = TRUE FOR UPDATE", [productId]
     );
     if (!product.rows[0]) throw new Error("Produto inexistente ou inativo.");
-
     const stock = await client.query<{ quantity: string }>(
-      `UPDATE stock SET quantity = quantity - $2
-       WHERE product_id = $1 AND quantity >= $2
-       RETURNING quantity`,
+      `UPDATE stock SET quantity = quantity - $2 WHERE product_id = $1 AND quantity >= $2 RETURNING quantity`,
       [productId, quantity]
     );
     if (!stock.rows[0]) throw new Error("Estoque insuficiente para concluir a venda.");
