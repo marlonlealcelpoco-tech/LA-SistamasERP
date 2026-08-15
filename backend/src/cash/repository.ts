@@ -22,6 +22,21 @@ type CashEvent = {
   amount: string;
 };
 
+type CashReport = {
+  session: CashSession;
+  salesByPaymentMethod: Record<string, number>;
+  totals: {
+    opening: number;
+    customerReceipts: number;
+    supplies: number;
+    withdrawals: number;
+    purchasesOnCredit: number;
+    creditSales: number;
+    cancellations: number;
+    expectedCash: number;
+  };
+};
+
 export class CashRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -85,7 +100,7 @@ export class CashRepository {
     return true;
   }
 
-  async report(sessionId: number): Promise<Record<string, unknown> | undefined> {
+  async report(sessionId: number): Promise<CashReport | undefined> {
     const session = await this.find(sessionId);
     if (!session) return undefined;
 
@@ -94,41 +109,46 @@ export class CashRepository {
       [sessionId]
     );
     const paymentTotals: Record<string, number> = {};
-    const totals: Record<string, number> = {
+    const totals = {
       opening: Number(session.opening_amount),
       customerReceipts: 0,
       supplies: 0,
       withdrawals: 0,
       purchasesOnCredit: 0,
       creditSales: 0,
-      cancellations: 0
+      cancellations: 0,
+      expectedCash: 0
     };
 
     for (const event of events.rows) {
       const amount = Number(event.amount);
-      if (event.type === "SALE_PAYMENT" || event.type === "CANCELLATION") {
-        const method = event.payment_method ?? "UNSPECIFIED";
+      const method = event.payment_method ?? "UNSPECIFIED";
+
+      if (event.type === "SALE_PAYMENT") {
         paymentTotals[method] = Number(((paymentTotals[method] ?? 0) + amount).toFixed(2));
       }
       if (event.type === "CREDIT_SALE") totals.creditSales += amount;
+      if (event.type === "CANCELLATION") {
+        if (method === "CREDIT") {
+          totals.creditSales += amount;
+        } else {
+          paymentTotals[method] = Number(((paymentTotals[method] ?? 0) + amount).toFixed(2));
+        }
+        totals.cancellations += Math.abs(amount);
+      }
       if (event.type === "CUSTOMER_RECEIPT") totals.customerReceipts += amount;
       if (event.type === "SUPPLY") totals.supplies += amount;
       if (event.type === "WITHDRAWAL") totals.withdrawals += amount;
       if (event.type === "PURCHASE_ON_CREDIT") totals.purchasesOnCredit += amount;
-      if (event.type === "CANCELLATION") totals.cancellations += Math.abs(amount);
     }
 
     const cashSales = paymentTotals.CASH ?? 0;
-    const expectedCash = Number((
+    totals.expectedCash = Number((
       totals.opening + cashSales + totals.customerReceipts + totals.supplies
       - totals.withdrawals - totals.purchasesOnCredit
     ).toFixed(2));
 
-    return {
-      session,
-      salesByPaymentMethod: paymentTotals,
-      totals: { ...totals, expectedCash }
-    };
+    return { session, salesByPaymentMethod: paymentTotals, totals };
   }
 
   async close(sessionId: number, closingAmount: number): Promise<Record<string, unknown> | "not_found" | "already_closed"> {
@@ -137,12 +157,18 @@ export class CashRepository {
     if (session.status !== "OPEN") return "already_closed";
 
     const report = await this.report(sessionId);
+    if (!report) return "not_found";
+
     await this.pool.query(
       `UPDATE cash_sessions
        SET status = 'CLOSED', closed_at = CURRENT_TIMESTAMP, closing_amount = $2, report_snapshot = $3
        WHERE id = $1 AND status = 'OPEN'`,
       [sessionId, closingAmount, report]
     );
-    return { ...report, closingAmount, difference: Number((closingAmount - Number((report as any).totals.expectedCash)).toFixed(2)) };
+    return {
+      ...report,
+      closingAmount,
+      difference: Number((closingAmount - report.totals.expectedCash).toFixed(2))
+    };
   }
 }
