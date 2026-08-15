@@ -23,9 +23,14 @@ export class StoreCreditRepository {
 
   async consume(client: PoolClient, customerId: number, saleId: number, amount: number): Promise<void> {
     if (amount <= 0) throw new Error("Valor de utilização de crédito inválido.");
+
+    // Lock the customer row to serialize concurrent credit consumption, then
+    // calculate the aggregate balance separately. PostgreSQL does not allow
+    // FOR UPDATE directly on an aggregate query.
+    await client.query(`SELECT id FROM customers WHERE id = $1 FOR UPDATE`, [customerId]);
     const balance = await client.query<{ balance: string }>(
       `SELECT COALESCE(SUM(CASE WHEN type IN ('RETURN_CREDIT','CREDIT_REVERSAL') THEN amount ELSE -amount END), 0)::numeric AS balance
-         FROM customer_credit_ledger WHERE customer_id = $1 FOR UPDATE`, [customerId]
+         FROM customer_credit_ledger WHERE customer_id = $1`, [customerId]
     );
     if (Number(balance.rows[0].balance) + 0.005 < amount) throw new Error("Crédito disponível insuficiente.");
     await client.query(
