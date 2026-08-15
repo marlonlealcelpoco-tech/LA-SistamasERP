@@ -47,7 +47,7 @@ export function registerCashRoutes(app: FastifyInstance, users: UserRepository, 
 
     const session = await cash.open(input.terminalId, sellerId, input.openingAmount);
     if (session === "already_open") {
-      return reply.code(409).send({ message: "Já existe um caixa aberto para este vendedor neste computador." });
+      return reply.code(409).send({ message: "Já existe um caixa aberto neste computador." });
     }
     return reply.code(201).send({ cashSession: session, cashNumber: `CX-${String(session.id).padStart(6, "0")}` });
   });
