@@ -2,129 +2,108 @@
 
 ## Início rápido
 
-1. Na raiz do projeto, inicie o banco com `docker compose up -d`.
-2. Na pasta `backend`, crie `.env` a partir de `.env.example` e defina `JWT_SECRET` e `BOOTSTRAP_TOKEN`.
+1. Na raiz do projeto, execute `docker compose up -d`.
+2. Na pasta `backend`, crie `.env` a partir de `.env.example`.
 3. Execute `npm install` e `npm run dev`.
 
-A API estará em `http://localhost:3000`. Todas as rotas autenticadas usam `Authorization: Bearer <token>`.
+A API estará em `http://localhost:3000`. Rotas autenticadas usam `Authorization: Bearer <token>`.
 
 ## Módulos disponíveis
 
-| Recurso | Rotas | Acesso |
-| --- | --- | --- |
-| Saúde | `GET /health` | Público |
-| Sessão | `POST /auth/setup`, `POST /auth/login`, `GET /auth/me` | Conforme rota |
-| Usuários | `GET/POST /users`, `PUT /users/:id/roles`, `PATCH /users/:id/status` | ADMIN |
-| Clientes | `GET/POST /customers`, `PUT /customers/:id`, `PATCH /customers/:id/status` | ADMIN, VENDAS, FINANCEIRO |
-| Fornecedores | `GET/POST /suppliers`, `PUT /suppliers/:id`, `PATCH /suppliers/:id/status` | ADMIN, FINANCEIRO |
-| Produtos | `GET/POST /products`, `PUT /products/:id`, status e estoque mínimo | Conforme rota |
-| Estoque | `GET /products/:productId/movements`, `POST /inventory/movements` | Conforme rota |
-| Compras | Rotas abaixo | ADMIN, ESTOQUE |
+| Recurso | Acesso |
+| --- | --- |
+| Usuários | ADMIN |
+| Clientes e fornecedores | Conforme perfil |
+| Produtos, estoque e compras | Conforme perfil |
+| Vendas e caixa | ADMIN, VENDAS |
+| Consolidado diário de caixas | ADMIN, FINANCEIRO |
 
-## Produtos e margem
+## Caixas por vendedor, turno e computador
 
-Cada produto possui `profitMarginPct`, a margem percentual usada para sugerir o preço de venda quando o custo muda. Ao cadastrar ou editar um produto, informe o campo:
+Uma abertura cria uma sessão de caixa independente. O sistema gera o número `CX-000001` a partir do identificador da sessão e armazena:
+
+- computador/terminal (`terminalId`);
+- vendedor;
+- data, hora e valor de abertura;
+- vendas e recebimentos por forma de pagamento;
+- vendas a prazo;
+- cancelamentos;
+- sangrias, suprimentos e compras a prazo;
+- valor de fechamento, diferença e relatório congelado.
+
+Vários computadores e vendedores podem ter caixas abertos ao mesmo tempo. Para troca de vendedor, abra um novo caixa para o novo vendedor; os movimentos permanecem separados.
+
+### Abrir caixa
 
 ```json
+POST /cash-sessions
+
 {
-  "code": "PROD-001",
-  "name": "Produto Exemplo",
-  "unit": "UN",
-  "cost": 25.50,
-  "salePrice": 49.90,
-  "profitMarginPct": 60
+  "terminalId": "CAIXA-01",
+  "openingAmount": 150.00
 }
 ```
 
-## Compras manuais
+Um administrador pode abrir para outro vendedor ao incluir `sellerId`.
 
-1. Crie a compra em rascunho:
+### Movimentos manuais
 
 ```json
-POST /purchases
+POST /cash-sessions/1/transactions
 
 {
-  "supplierId": 1,
+  "type": "WITHDRAWAL",
+  "amount": 100.00,
+  "description": "Sangria para cofre"
+}
+```
+
+Tipos: `SUPPLY` (suprimento), `WITHDRAWAL` (sangria), `CUSTOMER_RECEIPT` (recebimento de venda a prazo) e `PURCHASE_ON_CREDIT` (saída referente a compra a prazo).
+
+### Fechar e consultar
+
+- `GET /cash-sessions/:id/report`: relatório do caixa aberto ou fechado.
+- `POST /cash-sessions/:id/close`: recebe `{ "closingAmount": 123.45 }`, encerra e grava o relatório.
+- `GET /cash-reports/daily?date=2026-08-15&terminalId=CAIXA-01`: consolida todos os caixas do dia, com filtro opcional por computador.
+
+O relatório inclui abertura, vendas por forma de pagamento, vendas a prazo, recebimentos a prazo, suprimentos, sangrias, compras a prazo, cancelamentos e valor esperado em dinheiro.
+
+## Vendas
+
+Uma venda exige caixa aberto do vendedor e baixa o estoque imediatamente. A soma dos pagamentos deve corresponder ao total dos itens.
+
+```json
+POST /sales
+
+{
+  "cashSessionId": 1,
+  "customerId": 1,
   "items": [
-    { "productId": 1, "quantity": 10, "unitCost": 25.50 }
+    { "productId": 1, "quantity": 2, "unitPrice": 49.90 }
+  ],
+  "payments": [
+    { "paymentMethod": "PIX", "amount": 50.00 },
+    { "paymentMethod": "CASH", "amount": 49.80 }
   ]
 }
 ```
 
-2. Confirme a compra. Somente neste momento o saldo é somado e o custo dos produtos é atualizado:
+Formas de pagamento: `CASH`, `PIX`, `DEBIT_CARD`, `CREDIT_CARD`, `TRANSFER` e `CREDIT`. Para `CREDIT` (venda a prazo), informe também `dueDate`.
 
-```json
-POST /purchases/1/confirm
+Para cancelar, use `POST /sales/:id/cancel`. O estoque é estornado e o relatório do caixa recebe o cancelamento.
 
-{
-  "salePriceUpdates": [
-    { "itemId": 1, "applySuggestedSalePrice": true }
-  ]
-}
-```
+## Compras e XML
 
-`applySuggestedSalePrice` é opcional e padrão `false`: o sistema sempre corrige o custo da compra confirmada, mas só altera a venda quando houver confirmação explícita.
+- `POST /purchases`: compra manual em rascunho.
+- `POST /purchases/xml/preview`: identifica itens de NF-e e mostra comparação de preço.
+- `POST /purchases/import-xml`: registra XML com decisão Vincular/Cadastrar por item.
+- `POST /purchases/:id/confirm`: efetiva entrada, custo e alterações de venda aprovadas.
 
-## Importação de XML de NF-e
+A documentação completa de XML está versionada junto desta página no histórico do repositório.
 
-O fluxo foi criado para que a interface futura possa orientar o usuário antes de alterar o catálogo ou o estoque.
+## Regras importantes
 
-1. Envie o conteúdo XML como texto para a prévia:
-
-```json
-POST /purchases/xml/preview
-
-{ "xml": "<?xml version=\"1.0\" ...>" }
-```
-
-A resposta mostra fornecedor da nota, itens e, para produtos encontrados pelo `cProd` do XML:
-
-- custo antigo e venda antiga;
-- custo novo;
-- margem cadastrada;
-- venda sugerida pela margem.
-
-Para item não localizado, a resposta informa `UNRESOLVED`. A tela deve oferecer:
-
-- **Vincular**: escolher e confirmar um produto já cadastrado.
-- **Cadastrar**: criar um produto com código, nome e custo preenchidos a partir do XML; nome, código, margem e venda podem ser ajustados antes do envio.
-
-2. Crie o rascunho importado, enviando uma decisão para cada item:
-
-```json
-POST /purchases/import-xml
-
-{
-  "supplierId": 1,
-  "xml": "<?xml version=\"1.0\" ...>",
-  "items": [
-    { "itemNumber": 1, "action": "LINK", "productId": 15 },
-    {
-      "itemNumber": 2,
-      "action": "CREATE",
-      "product": {
-        "profitMarginPct": 50,
-        "salePrice": 89.90
-      }
-    }
-  ]
-}
-```
-
-No caso `CREATE`, campos não informados são preenchidos pelo XML. Caso a venda não seja enviada, ela é sugerida a partir do custo e da margem.
-
-3. A resposta do rascunho inclui `priceReview`, com `costBefore`, `salePriceBefore`, `costAfter` e `suggestedSalePrice` por item. Confirme a compra com `POST /purchases/:id/confirm`; então o estoque é somado, o custo é corrigido e a venda é atualizada apenas nos itens aprovados.
-
-## Regras de estoque
-
-- `ENTRY` soma uma quantidade positiva.
-- `EXIT` subtrai uma quantidade positiva; a API recusa saldo negativo.
-- `ADJUSTMENT` aceita valor positivo ou negativo.
-- A confirmação de compra registra uma entrada identificada pela compra e impede confirmação duplicada.
-
-## Segurança e decisões
-
-- Senhas nunca são salvas em texto: são processadas com bcrypt.
-- Segredos ficam em variáveis de ambiente e não devem ser enviados ao GitHub.
-- Compras ficam em rascunho até a confirmação; nenhuma alteração de estoque ou custo ocorre durante a prévia do XML.
-- O XML original é preservado no rascunho importado para auditoria.
+- Compras só alteram estoque e custo após confirmação.
+- Vendas só são aceitas com caixa aberto do próprio vendedor.
+- Saídas de estoque não permitem saldo negativo.
+- O fechamento torna a sessão imutável para novos movimentos e preserva uma cópia do relatório.
