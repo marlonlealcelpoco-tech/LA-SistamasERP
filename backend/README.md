@@ -37,12 +37,33 @@ A API estará em `http://localhost:3000`.
 | PUT | `/users/:id/roles` | ADMIN | Substitui os perfis de um usuário |
 | PATCH | `/users/:id/status` | ADMIN | Ativa ou desativa um usuário |
 
-Os perfis iniciais são:
+Os perfis iniciais são `ADMIN`, `VENDAS`, `ESTOQUE` e `FINANCEIRO`.
 
-- `ADMIN`: acesso completo e gestão de usuários.
-- `VENDAS`: operações comerciais.
-- `ESTOQUE`: produtos e estoque.
-- `FINANCEIRO`: operações financeiras.
+## Clientes e fornecedores
+
+As duas rotas aceitam o parâmetro opcional `?search=` para pesquisa por nome, documento ou e-mail.
+
+| Método | Rota | Acesso | Uso |
+| --- | --- | --- | --- |
+| GET | `/customers` | ADMIN, VENDAS, FINANCEIRO | Lista clientes |
+| POST | `/customers` | ADMIN, VENDAS, FINANCEIRO | Cria cliente |
+| PUT | `/customers/:id` | ADMIN, VENDAS, FINANCEIRO | Atualiza cliente |
+| PATCH | `/customers/:id/status` | ADMIN, VENDAS, FINANCEIRO | Ativa/desativa cliente |
+| GET | `/suppliers` | ADMIN, FINANCEIRO | Lista fornecedores |
+| POST | `/suppliers` | ADMIN, FINANCEIRO | Cria fornecedor |
+| PUT | `/suppliers/:id` | ADMIN, FINANCEIRO | Atualiza fornecedor |
+| PATCH | `/suppliers/:id/status` | ADMIN, FINANCEIRO | Ativa/desativa fornecedor |
+
+Exemplo de cadastro:
+
+```json
+{
+  "name": "Empresa Exemplo LTDA",
+  "document": "12.345.678/0001-90",
+  "email": "contato@exemplo.com",
+  "phone": "+55 11 99999-9999"
+}
+```
 
 ### Criar o primeiro administrador
 
@@ -61,19 +82,6 @@ Após o login, envie o token recebido no cabeçalho:
 
 ```text
 Authorization: Bearer <token>
-```
-
-### Criar um usuário
-
-Apenas um administrador autenticado pode criar usuários:
-
-```json
-{
-  "name": "Usuário de Estoque",
-  "email": "estoque@empresa.com",
-  "password": "uma-senha-forte",
-  "roles": ["ESTOQUE"]
-}
 ```
 
 ## Segurança e decisões
