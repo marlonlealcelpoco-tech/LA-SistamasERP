@@ -2,41 +2,38 @@
 
 ## Stack adotada
 
-- **Node.js 22 + TypeScript**: execução estável e tipagem para reduzir erros de manutenção.
-- **Fastify**: API REST leve, rápida e preparada para crescer por módulos.
-- **PostgreSQL**: banco relacional adequado aos vínculos e à consistência exigidos por um ERP.
-- **SQL com `pg`**: acesso direto ao banco nesta primeira etapa, sem acoplamento desnecessário a ORM.
-- **JWT + bcrypt**: sessão por token e senhas armazenadas apenas como hash seguro.
-- **Zod**: validação de entradas e de variáveis de ambiente.
-- **fast-xml-parser**: leitura de XML de NF-e sem dependência da interface.
+- **Node.js 22 + TypeScript**
+- **Fastify**
+- **PostgreSQL**
+- **SQL com `pg`**
+- **JWT + bcrypt**
+- **Zod**
+- **fast-xml-parser** para XML de NF-e
 
-A interface continua fora do escopo desta etapa. Ela será implementada separadamente, usando o modelo PowerPoint como referência.
+A interface será criada posteriormente a partir do modelo PowerPoint.
 
 ## Implementado
 
-- Autenticação, perfis e gestão de usuários
-- Clientes, fornecedores, produtos e estoque
-- Compras manuais em rascunho e confirmação transacional
-- Prévia e importação de XML de NF-e
-- Vínculo ou cadastro de produtos não encontrados no XML
-- Revisão explícita de preço: custo anterior/novo e venda anterior/sugerida
-- Entrada de estoque e atualização de custo somente na confirmação da compra
-- Autorização por perfil aplicada nas rotas
-- Banco PostgreSQL local opcional via Docker Compose
+- Autenticação, perfis, clientes, fornecedores, produtos e estoque
+- Compras manuais e por XML, com revisão de preço
+- Vendas com múltiplas formas de pagamento e baixa de estoque
+- Sessões de caixa independentes por terminal, vendedor e turno
+- Sangria, suprimento, recebimento a prazo, compra a prazo e cancelamento
+- Fechamento com relatório salvo e consolidado diário por computador
+- Autorizações por perfil e operações de estoque transacionais
 
 ## Organização
 
 ```text
-backend/
-├── src/
-│   ├── auth/       # login, senha, sessão e autorização
-│   ├── db/         # conexão com PostgreSQL
-│   ├── inventory/  # movimentos e saldo de estoque
-│   ├── parties/    # clientes e fornecedores
-│   ├── products/   # catálogo, preços e margem
-│   ├── purchases/  # compra manual, XML e confirmação
-│   ├── users/      # gestão de usuários e perfis
-│   └── app.ts      # composição da API
+backend/src/
+├── auth/        # identidade e autorização
+├── cash/        # sessões, eventos e relatórios de caixa
+├── inventory/   # saldo e movimentos
+├── parties/     # clientes e fornecedores
+├── products/    # catálogo, preços e margem
+├── purchases/   # compra manual e XML
+├── sales/       # venda, pagamentos e cancelamento
+└── users/       # usuários e perfis
 ```
 
-Vendas e financeiro devem consumir compras confirmadas e movimentações já auditáveis, sem duplicar alterações de estoque.
+O próximo módulo é financeiro: contas a receber das vendas a prazo, contas a pagar e conciliação dos movimentos de caixa.
