@@ -13,22 +13,23 @@ A interface continua fora do escopo desta etapa. Ela será implementada separada
 
 ## Implementado
 
-- Endpoint de saúde: `GET /health`
-- Criação controlada do primeiro administrador: `POST /auth/setup`
-- Login e consulta de sessão: `POST /auth/login` e `GET /auth/me`
+- Autenticação, primeiro administrador e sessão JWT
 - Perfis `ADMIN`, `VENDAS`, `ESTOQUE` e `FINANCEIRO`
 - Gestão administrativa de usuários, perfis e status de acesso
+- Cadastro de clientes e fornecedores, com pesquisa e controle de status
+- Autorização por perfil aplicada nas rotas
 - Banco PostgreSQL local opcional via Docker Compose
-- Migrations para IDs automáticos e perfis iniciais
+- Migrations para IDs automáticos e dados iniciais
 
 ## Organização
 
 ```text
 backend/
 ├── src/
-│   ├── auth/       # login, senha, sessão e acesso a usuários
+│   ├── auth/       # login, senha, sessão e autorização
 │   ├── db/         # conexão com PostgreSQL
-│   ├── users/      # gestão de usuários e autorização por perfil
+│   ├── parties/    # clientes e fornecedores
+│   ├── users/      # gestão de usuários e perfis
 │   ├── app.ts      # composição da API e tratamento de erros
 │   ├── config.ts   # validação da configuração de ambiente
 │   └── server.ts   # inicialização HTTP
@@ -37,4 +38,4 @@ backend/
 └── tsconfig.json
 ```
 
-Os próximos módulos (clientes, produtos, estoque, vendas e financeiro) devem seguir a mesma divisão por domínio, com autorização por perfil aplicada no nível das rotas.
+Os próximos módulos (produtos, estoque, vendas e financeiro) devem seguir a mesma divisão por domínio, com autorização por perfil aplicada no nível das rotas.
