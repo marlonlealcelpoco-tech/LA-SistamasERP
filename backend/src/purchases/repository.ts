@@ -22,6 +22,7 @@ export type PurchaseItemInput = {
   productId: number;
   quantity: number;
   unitCost: number;
+  xmlItemNumber?: number;
   referenceCode?: string | null;
   referenceDescription?: string | null;
 };
@@ -92,6 +93,7 @@ export class PurchaseRepository {
   async createImported(
     supplierId: number,
     xml: XmlPurchase,
+    xmlRaw: string,
     items: PurchaseItemInput[]
   ): Promise<CreatedPurchase> {
     return this.createPurchase({
@@ -99,7 +101,7 @@ export class PurchaseRepository {
       source: "XML",
       items,
       xmlAccessKey: xml.accessKey ?? null,
-      xmlRaw: null
+      xmlRaw
     });
   }
 
@@ -225,14 +227,14 @@ export class PurchaseRepository {
     const suggestedSalePrice = Number((item.unitCost * (1 + Number(match.profit_margin_pct) / 100)).toFixed(2));
     const result = await client.query<PurchaseItemRecord>(
       `INSERT INTO purchase_items (
-        purchase_id, product_id, quantity, unit_cost, total, source_code, source_description,
+        purchase_id, product_id, quantity, unit_cost, total, xml_item_number, source_code, source_description,
         cost_before, sale_price_before, suggested_sale_price
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING id, product_id, quantity, unit_cost, total, xml_item_number, source_code, source_description,
         cost_before, sale_price_before, suggested_sale_price`,
       [
         purchaseId, item.productId, item.quantity, item.unitCost, item.quantity * item.unitCost,
-        item.referenceCode ?? match.code, item.referenceDescription ?? match.name,
+        item.xmlItemNumber ?? null, item.referenceCode ?? match.code, item.referenceDescription ?? match.name,
         match.cost, match.sale_price, suggestedSalePrice
       ]
     );
