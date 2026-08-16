@@ -9,7 +9,10 @@
 <body>
   <div class="app-shell" id="appShell">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><div class="brand-mark">LA</div><div><strong>LA SISTEMAS</strong><small>ERP</small></div></div>
+      <div class="brand">
+        <div class="brand-logo" aria-label="LA Sistemas"><span>L</span><b>A</b></div>
+        <div><strong>LA SISTEMAS</strong><small>ERP</small></div>
+      </div>
       <nav class="menu" aria-label="Menu principal">
         <a class="menu-item active" href="#dashboard" data-module="Dashboard">🏠 <span>Dashboard</span></a>
         <div class="menu-title">OPERAÇÃO</div>
@@ -27,7 +30,12 @@
     </aside>
     <div class="workspace">
       <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu">☰</button><div class="breadcrumb"><span>LA Sistemas</span><b>/</b><strong id="pageTitle">Dashboard</strong></div><div class="top-actions"><span class="system-status"><i></i> Sistema online</span><div class="user"><div class="avatar" id="avatar">AD</div><div><strong id="userName">Usuário</strong><small id="userRole">—</small></div></div></div></header>
-      <main class="content" id="content"><section class="welcome"><div><span class="eyebrow">VISÃO GERAL</span><h1>Dashboard</h1><p>Bem-vindo ao LA Sistemas ERP.</p></div><div class="date-card" id="currentDate"></div></section><section class="cards"><article><span>Vendas do dia</span><strong>R$ 0,00</strong><small>Sem movimentações</small></article><article><span>Caixa</span><strong>Fechado</strong><small>Aguardando abertura</small></article><article><span>Estoque</span><strong>0</strong><small>Produtos cadastrados</small></article><article><span>Contas a receber</span><strong>R$ 0,00</strong><small>Visão financeira</small></article></section><section class="panel"><div><span class="eyebrow">PRÓXIMA ETAPA</span><h2>Estrutura do sistema pronta</h2><p>O App Shell está preparado para receber os módulos conectados às APIs oficiais do backend.</p></div><div class="check-list"><span>✓ Autenticação real</span><span>✓ Menu baseado em permissões</span><span>✓ APIs oficiais</span><span>✓ Documentação de continuidade</span></div></section></main>
+      <main class="content" id="content">
+        <div class="watermark" aria-hidden="true"><span>L</span><b>A</b></div>
+        <section class="welcome"><div><span class="eyebrow">VISÃO GERAL</span><h1>Dashboard</h1><p>Bem-vindo ao LA Sistemas ERP.</p></div><div class="date-card" id="currentDate"></div></section>
+        <section class="cards"><article><span>Vendas do dia</span><strong>R$ 0,00</strong><small>Sem movimentações</small></article><article><span>Caixa</span><strong>Fechado</strong><small>Aguardando abertura</small></article><article><span>Estoque</span><strong>0</strong><small>Produtos cadastrados</small></article><article><span>Contas a receber</span><strong>R$ 0,00</strong><small>Visão financeira</small></article></section>
+        <section class="panel"><div><span class="eyebrow">PRÓXIMA ETAPA</span><h2>Estrutura do sistema pronta</h2><p>O App Shell está preparado para receber os módulos conectados às APIs oficiais do backend.</p></div><div class="check-list"><span>✓ Autenticação real</span><span>✓ Menu baseado em permissões</span><span>✓ APIs oficiais</span><span>✓ Documentação de continuidade</span></div></section>
+      </main>
     </div>
   </div>
   <script src="./js/app-shell.js"></script>
