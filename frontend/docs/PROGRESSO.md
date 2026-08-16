@@ -45,13 +45,13 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 
 **Objetivo:** reconstruir visualmente o App Shell com base na identidade visual do PDF/PowerPoint fornecido, sem transformar os botões ou funcionalidades da referência em especificação funcional.
 
-**Desenvolvido:** refinamento da estrutura HTML e do CSS do App Shell, mantendo a navegação modular e a preparação para sessão/permissões do backend. Foram reforçados o tratamento visual do logo LA-SISTEMAS, a hierarquia do menu, a linguagem corporativa, o cabeçalho, os cards, a área principal e a marca d'água LA.
+**Desenvolvido:** refinamento da estrutura HTML e do CSS do App Shell, mantendo a navegação modular e a preparação para sessão/permissões do backend. Foram reforçados o tratamento visual do logo LA-SISTEMAS, a hierarquia do menu, a linguagem corporativa, o cabeçalho, os cards, a área principal, a marca d'água LA e o comportamento responsivo.
 
 **Arquivos alterados:**
 - `frontend/app-shell.html`
 - `frontend/styles/app-shell.css`
 
-**Arquivos de documentação criados anteriormente nesta etapa:**
+**Documentação relacionada:**
 - `frontend/docs/IDENTIDADE-VISUAL.md`
 - `frontend/docs/APP-SHELL-VISUAL.md`
 
@@ -65,13 +65,13 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 
 **Testes:** revisão estrutural do HTML/CSS e preservação da navegação existente; validação visual final e testes de integração permanecem pendentes.
 
-**Commits:**
-- `7db6fdc397629f7f62bf5434ed9e2b723659ac4b` — reconstrução da estrutura visual do App Shell.
-- `77c70a757a1bfc0b4f5381b895170ff65b878e03` — aplicação da identidade visual no CSS.
+**Commits desta continuação:**
+- `5fbeba6be7d2ce2029e23b7ebceb18bf20d3cf63` — refinamento da composição visual do App Shell.
+- `8c909777d0208748aa4422a5197118dc0138553c` — consolidação do acabamento responsivo do App Shell.
 
 **Status:** 🚧 Em desenvolvimento.
 
-**Próximo passo:** validar visualmente o App Shell contra a referência fornecida e, após aprovação, partir para a integração de `POST /auth/login` e `GET /auth/me`.
+**Próximo passo:** validar visualmente o App Shell contra a referência fornecida. Somente após a aprovação visual o projeto avançará para `POST /auth/login` e `GET /auth/me`.
 
 ## Registro da etapa — Diretriz visual
 **Data:** 2026-08-15
