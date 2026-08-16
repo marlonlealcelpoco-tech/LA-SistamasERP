@@ -6,7 +6,7 @@ export async function requireRoles(
   request: FastifyRequest,
   reply: FastifyReply,
   users: UserRepository,
-  allowedRoles: UserRole[]
+  allowedRoles: readonly UserRole[]
 ): Promise<boolean> {
   const roles = await users.findRoleNames(Number(request.user.sub));
   if (allowedRoles.some((role) => roles.includes(role))) {

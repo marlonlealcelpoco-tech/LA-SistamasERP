@@ -19,13 +19,13 @@ const movementSchema = z.object({
 
 export function registerInventoryRoutes(app: FastifyInstance, users: UserRepository, inventory: InventoryRepository) {
   app.get("/products/:productId/movements", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "ESTOQUE", "FINANCEIRO"]))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN", "GERENTE", "ESTOQUE", "SUPERVISOR", "FINANCEIRO"]))) return;
     const { productId } = productIdSchema.parse(request.params);
     return { movements: await inventory.listMovements(productId) };
   });
 
   app.post("/inventory/movements", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "ESTOQUE"]))) return;
+    if (!(await requireRoles(request, reply, users, ["ADMIN", "GERENTE", "ESTOQUE"]))) return;
     const result = await inventory.move(movementSchema.parse(request.body));
 
     if (result.kind === "not_found") {

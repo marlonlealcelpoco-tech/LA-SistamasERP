@@ -28,7 +28,7 @@ export type FinancialEntryInput = {
   dueDate?: string | null;
   customerId?: number | null;
   supplierId?: number | null;
-  source?: "MANUAL" | "XML" | "SALE";
+  source?: "MANUAL" | "XML" | "SALE" | "PURCHASE" | "IMPORT";
   documentNumber?: string | null;
   xmlRaw?: string | null;
   saleId?: number | null;
@@ -73,12 +73,15 @@ export class FinanceRepository {
     amount: number,
     paymentMethod: string,
     cashSessionId?: number | null,
+    financialAccountId?: number | null,
     notes?: string | null
   ): Promise<"not_found" | "already_settled" | "exceeds_remaining" | FinancialEntry> {
-    const client = await this.pool.connect();
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("O valor da baixa deve ser maior que zero.");
 
+    const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
+
       const entry = await client.query<FinancialEntry>(
         `SELECT id, type, description, amount, settled_amount, due_date, paid_at, status,
           customer_id, supplier_id, source, document_number, sale_id, purchase_id, created_at
@@ -86,20 +89,11 @@ export class FinanceRepository {
         [entryId, type]
       );
       const record = entry.rows[0];
-      if (!record) {
-        await client.query("ROLLBACK");
-        return "not_found";
-      }
+      if (!record) { await client.query("ROLLBACK"); return "not_found"; }
 
       const remaining = Number(record.amount) - Number(record.settled_amount);
-      if (remaining <= 0) {
-        await client.query("ROLLBACK");
-        return "already_settled";
-      }
-      if (amount - remaining > 0.005) {
-        await client.query("ROLLBACK");
-        return "exceeds_remaining";
-      }
+      if (remaining <= 0) { await client.query("ROLLBACK"); return "already_settled"; }
+      if (amount - remaining > 0.005) { await client.query("ROLLBACK"); return "exceeds_remaining"; }
 
       if (cashSessionId) {
         const session = await client.query<{ id: number }>(
@@ -109,11 +103,23 @@ export class FinanceRepository {
         if (!session.rows[0]) throw new Error("O caixa informado não está aberto.");
       }
 
+      if (financialAccountId) {
+        const account = await client.query<{ id: number; active: boolean }>(
+          "SELECT id, active FROM financial_accounts WHERE id = $1 FOR UPDATE",
+          [financialAccountId]
+        );
+        if (!account.rows[0] || !account.rows[0].active) throw new Error("A conta financeira informada não está disponível.");
+      }
+
+      if (!cashSessionId && !financialAccountId) {
+        throw new Error("Informe o caixa ou a conta financeira de destino/origem.");
+      }
+
       await client.query(
         `INSERT INTO financial_settlements (
-          financial_entry_id, cash_session_id, payment_method, amount, notes
-        ) VALUES ($1, $2, $3, $4, $5)`,
-        [entryId, cashSessionId ?? null, paymentMethod, amount, notes ?? null]
+          financial_entry_id, cash_session_id, financial_account_id, payment_method, amount, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [entryId, cashSessionId ?? null, financialAccountId ?? null, paymentMethod, amount, notes ?? null]
       );
 
       if (cashSessionId) {
@@ -121,10 +127,19 @@ export class FinanceRepository {
         await client.query(
           `INSERT INTO cash_events (cash_session_id, type, payment_method, amount, description)
            VALUES ($1, $2, $3, $4, $5)`,
-          [
-            cashSessionId, eventType, paymentMethod, amount,
-            type === "PAYABLE" ? `Pagamento: ${record.description}` : `Recebimento: ${record.description}`
-          ]
+          [cashSessionId, eventType, paymentMethod, type === "PAYABLE" ? -Math.abs(amount) : Math.abs(amount),
+            type === "PAYABLE" ? `Pagamento: ${record.description}` : `Recebimento: ${record.description}`]
+        );
+      }
+
+      if (financialAccountId) {
+        const signedAmount = type === "PAYABLE" ? -Math.abs(amount) : Math.abs(amount);
+        await client.query(
+          `INSERT INTO financial_account_transactions
+             (financial_account_id, financial_entry_id, amount, transaction_type, payment_method, description)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [financialAccountId, entryId, signedAmount, type === "PAYABLE" ? "EXPENSE" : "INCOME", paymentMethod,
+            type === "PAYABLE" ? `Pagamento: ${record.description}` : `Recebimento: ${record.description}`]
         );
       }
 

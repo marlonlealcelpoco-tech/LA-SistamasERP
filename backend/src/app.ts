@@ -17,6 +17,7 @@ import { registerProductRoutes } from "./products/routes.js";
 import { PurchaseRepository } from "./purchases/repository.js";
 import { registerPurchaseRoutes } from "./purchases/routes.js";
 import { SalesRepository } from "./sales/repository.js";
+import { SupervisorActionsRepository } from "./sales/supervisor-actions.js";
 import { registerSalesRoutes } from "./sales/routes.js";
 import { registerUserRoutes } from "./users/routes.js";
 
@@ -35,18 +36,12 @@ export function buildApp(environment: Environment, pool: Pool) {
   const purchases = new PurchaseRepository(pool);
   const cash = new CashRepository(pool);
   const sales = new SalesRepository(pool);
+  const supervisorActions = new SupervisorActionsRepository(pool);
 
   app.register(cors, { origin: environment.CORS_ORIGIN ?? false });
   app.register(jwt, { secret: environment.JWT_SECRET });
-
-  app.decorate("authenticate", async function authenticate(request) {
-    await request.jwtVerify();
-  });
-
-  app.get("/health", async () => {
-    await pool.query("SELECT 1");
-    return { status: "ok" };
-  });
+  app.decorate("authenticate", async function authenticate(request) { await request.jwtVerify(); });
+  app.get("/health", async () => { await pool.query("SELECT 1"); return { status: "ok" }; });
 
   registerAuthRoutes(app, users, environment);
   registerUserRoutes(app, users);
@@ -55,18 +50,13 @@ export function buildApp(environment: Environment, pool: Pool) {
   registerInventoryRoutes(app, users, inventory);
   registerPurchaseRoutes(app, users, purchases, products);
   registerCashRoutes(app, users, cash);
-  registerSalesRoutes(app, users, sales);
+  registerSalesRoutes(app, users, sales, supervisorActions);
 
   app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof ZodError) {
-      return reply.code(400).send({ message: "Dados inválidos.", details: error.issues });
-    }
-    if (error.code === "23505") {
-      return reply.code(409).send({ message: "Já existe um registro com estes dados." });
-    }
+    if (error instanceof ZodError) return reply.code(400).send({ message: "Dados inválidos.", details: error.issues });
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") return reply.code(409).send({ message: "Já existe um registro com estes dados." });
     app.log.error(error);
     return reply.code(500).send({ message: "Erro interno do servidor." });
   });
-
   return app;
 }

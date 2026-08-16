@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireRoles } from "../auth/authorization.js";
 import { UserRepository } from "../auth/user-repository.js";
+import { ROLE_POLICY } from "../auth/role-policy.js";
 import { ProductRepository } from "./repository.js";
 
 const idSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -18,21 +19,28 @@ const productSchema = z.object({
 const statusSchema = z.object({ active: z.boolean() });
 const minimumSchema = z.object({ minimumQuantity: z.coerce.number().nonnegative() });
 
+const PRODUCT_QUERY_ROLES = ["ADMIN", "GERENTE", "SUPERVISOR", "VENDAS", "ESTOQUE", "FINANCEIRO"] as const;
+
 export function registerProductRoutes(app: FastifyInstance, users: UserRepository, products: ProductRepository) {
   app.get("/products", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "VENDAS", "ESTOQUE", "FINANCEIRO"]))) return;
+    if (!(await requireRoles(request, reply, users, [...PRODUCT_QUERY_ROLES]))) return;
     const { search } = searchSchema.parse(request.query);
-    return { products: await products.list(search) };
+    const roles = await users.findRoleNames(Number(request.user.sub));
+    const canSeeCost = ROLE_POLICY.COST_VIEW.some((role) => roles.includes(role));
+    const productsList = await products.list(search);
+
+    if (canSeeCost) return { products: productsList };
+    return { products: productsList.map(({ cost: _cost, ...product }) => product) };
   });
 
   app.post("/products", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "ESTOQUE"]))) return;
+    if (!(await requireRoles(request, reply, users, ROLE_POLICY.PRODUCT_MAINTENANCE))) return;
     const product = await products.create(productSchema.parse(request.body));
     return reply.code(201).send({ product });
   });
 
   app.put("/products/:id", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "ESTOQUE"]))) return;
+    if (!(await requireRoles(request, reply, users, ROLE_POLICY.PRODUCT_MAINTENANCE))) return;
     const { id } = idSchema.parse(request.params);
     const product = await products.update(id, productSchema.parse(request.body));
     if (!product) return reply.code(404).send({ message: "Produto não encontrado." });
@@ -40,7 +48,7 @@ export function registerProductRoutes(app: FastifyInstance, users: UserRepositor
   });
 
   app.patch("/products/:id/status", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "ESTOQUE"]))) return;
+    if (!(await requireRoles(request, reply, users, ROLE_POLICY.PRODUCT_MAINTENANCE))) return;
     const { id } = idSchema.parse(request.params);
     const { active } = statusSchema.parse(request.body);
     const product = await products.setActive(id, active);
@@ -49,7 +57,7 @@ export function registerProductRoutes(app: FastifyInstance, users: UserRepositor
   });
 
   app.put("/products/:id/minimum-stock", { onRequest: [app.authenticate] }, async (request, reply) => {
-    if (!(await requireRoles(request, reply, users, ["ADMIN", "ESTOQUE"]))) return;
+    if (!(await requireRoles(request, reply, users, ROLE_POLICY.PRODUCT_MAINTENANCE))) return;
     const { id } = idSchema.parse(request.params);
     const { minimumQuantity } = minimumSchema.parse(request.body);
     const product = await products.setMinimumQuantity(id, minimumQuantity);
