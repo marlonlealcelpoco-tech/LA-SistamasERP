@@ -8,7 +8,14 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - `main`: não utilizar para desenvolvimento desta etapa.
 - Backend: existente e validado pelo CI informado pelo projeto.
 - Banco de dados: schema existente e utilizado pelo backend.
-- Frontend: App Shell em reconstrução visual, com identidade visual baseada na referência fornecida e funcionalidade preservada para integração com o backend.
+- Frontend: App Shell em reconstrução visual, com identidade visual baseada na referência oficial `frontend/docs/sistemaerp.pdf` e funcionalidade preservada para integração com o backend.
+
+## Referência visual oficial
+- **Arquivo:** `frontend/docs/sistemaerp.pdf`
+- **Regra:** consultar este PDF sempre que houver uma decisão visual relevante no frontend.
+- **Uso:** exclusivamente identidade visual; não define funcionalidades.
+- **Fonte funcional:** backend e contratos reais da API no branch `feature/financeiro-completo`.
+- **Regra resumida:** **PDF = aparência. Backend = comportamento.**
 
 ## Etapas
 - [x] Mapear arquitetura do backend
@@ -29,7 +36,7 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [x] Criar responsividade inicial
 - [x] Registrar diretriz de identidade visual
 - [🚧] Reconstruir identidade visual do App Shell
-- [ ] Validar visual final do App Shell contra a referência fornecida
+- [ ] Validar visual final do App Shell contra `frontend/docs/sistemaerp.pdf`
 - [ ] Integrar login real à API
 - [ ] Validar menu com roles reais retornados pelo backend
 - [ ] Criar Dashboard real
@@ -39,6 +46,19 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [ ] Criar Cadastros
 - [ ] Criar Financeiro
 - [ ] Criar Relatórios
+
+## Registro da etapa — Referência visual oficial
+**Data:** 2026-08-15
+
+O arquivo `frontend/docs/sistemaerp.pdf` foi confirmado dentro do projeto e passa a ser a referência visual oficial e permanente do frontend.
+
+A documentação `frontend/docs/IDENTIDADE-VISUAL.md` foi atualizada para determinar que o PDF deve ser consultado em futuras decisões visuais e que ele não deve ser interpretado como especificação funcional.
+
+**Regra permanente:**
+- PDF/PowerPoint → identidade visual, composição, logos, cores, proporções e linguagem visual.
+- Backend → funcionalidades, menus, ações, permissões, validações, fluxos e regras de negócio.
+
+**Status:** referência visual registrada e disponível no repositório.
 
 ## Registro da etapa — Reconstrução visual do App Shell
 **Data:** 2026-08-15
@@ -54,6 +74,7 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 **Documentação relacionada:**
 - `frontend/docs/IDENTIDADE-VISUAL.md`
 - `frontend/docs/APP-SHELL-VISUAL.md`
+- `frontend/docs/sistemaerp.pdf`
 
 **Regras respeitadas:**
 - Backend continua sendo a fonte oficial das funcionalidades, permissões, validações e regras de negócio.
@@ -68,10 +89,11 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 **Commits desta continuação:**
 - `5fbeba6be7d2ce2029e23b7ebceb18bf20d3cf63` — refinamento da composição visual do App Shell.
 - `8c909777d0208748aa4422a5197118dc0138553c` — consolidação do acabamento responsivo do App Shell.
+- `40d7b6c2405180ad1a6d76e0f65cb9aae635bcce` — definição do PDF como referência visual oficial.
 
 **Status:** 🚧 Em desenvolvimento.
 
-**Próximo passo:** validar visualmente o App Shell contra a referência fornecida. Somente após a aprovação visual o projeto avançará para `POST /auth/login` e `GET /auth/me`.
+**Próximo passo:** validar visualmente o App Shell contra `frontend/docs/sistemaerp.pdf`. Somente após a aprovação visual o projeto avançará para `POST /auth/login` e `GET /auth/me`.
 
 ## Registro da etapa — Diretriz visual
 **Data:** 2026-08-15
