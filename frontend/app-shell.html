@@ -16,17 +16,17 @@
       </div>
       <nav class="menu" aria-label="Menu principal">
         <div class="menu-section">PRINCIPAL</div>
-        <a class="menu-item active" href="#dashboard" data-module="Dashboard"><span class="menu-icon">⌂</span><span>Dashboard</span></a>
+        <a class="menu-item active" href="#dashboard" data-module="Dashboard" data-roles="ADMIN,GERENTE,SUPERVISOR,VENDAS,ESTOQUE,FINANCEIRO"><span class="menu-icon">⌂</span><span>Dashboard</span></a>
         <div class="menu-section">OPERAÇÃO</div>
-        <a class="menu-item" href="#vendas" data-module="Vendas"><span class="menu-icon">▣</span><span>Vendas</span></a>
-        <a class="menu-item" href="#caixa" data-module="Caixa"><span class="menu-icon">$</span><span>Caixa</span></a>
-        <a class="menu-item" href="#estoque" data-module="Estoque"><span class="menu-icon">□</span><span>Estoque</span></a>
-        <a class="menu-item" href="#compras" data-module="Compras"><span class="menu-icon">◫</span><span>Compras</span></a>
+        <a class="menu-item" href="#vendas" data-module="Vendas" data-roles="ADMIN,GERENTE,SUPERVISOR,VENDAS"><span class="menu-icon">▣</span><span>Vendas</span></a>
+        <a class="menu-item" href="#caixa" data-module="Caixa" data-roles="ADMIN,GERENTE,SUPERVISOR,VENDAS"><span class="menu-icon">$</span><span>Caixa</span></a>
+        <a class="menu-item" href="#estoque" data-module="Estoque" data-roles="ADMIN,GERENTE,ESTOQUE"><span class="menu-icon">□</span><span>Estoque</span></a>
+        <a class="menu-item" href="#compras" data-module="Compras" data-roles="ADMIN,GERENTE,FINANCEIRO"><span class="menu-icon">◫</span><span>Compras</span></a>
         <div class="menu-section">GESTÃO</div>
-        <a class="menu-item" href="#cadastros" data-module="Cadastros"><span class="menu-icon">◎</span><span>Cadastros</span></a>
-        <a class="menu-item" href="#financeiro" data-module="Financeiro"><span class="menu-icon">◈</span><span>Financeiro</span></a>
-        <a class="menu-item" href="#relatorios" data-module="Relatórios"><span class="menu-icon">▥</span><span>Relatórios</span></a>
-        <a class="menu-item" href="#configuracoes" data-module="Configurações"><span class="menu-icon">⚙</span><span>Configurações</span></a>
+        <a class="menu-item" href="#cadastros" data-module="Cadastros" data-roles="ADMIN,GERENTE,FINANCEIRO"><span class="menu-icon">◎</span><span>Cadastros</span></a>
+        <a class="menu-item" href="#financeiro" data-module="Financeiro" data-roles="ADMIN,FINANCEIRO"><span class="menu-icon">◈</span><span>Financeiro</span></a>
+        <a class="menu-item" href="#relatorios" data-module="Relatórios" data-roles="ADMIN,FINANCEIRO"><span class="menu-icon">▥</span><span>Relatórios</span></a>
+        <a class="menu-item" href="#configuracoes" data-module="Configurações" data-roles="ADMIN"><span class="menu-icon">⚙</span><span>Configurações</span></a>
       </nav>
       <div class="sidebar-bottom"><button id="logout" class="logout" type="button"><span>↪</span> Sair do sistema</button></div>
     </aside>
