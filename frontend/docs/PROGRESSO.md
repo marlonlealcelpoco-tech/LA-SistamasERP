@@ -8,7 +8,7 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - `main`: não utilizar para desenvolvimento desta etapa.
 - Backend: existente e validado pelo CI informado pelo projeto.
 - Banco de dados: schema existente e utilizado pelo backend.
-- Frontend: App Shell inicial criado sobre a arquitetura real do backend e ajustado ao padrão visual de referência.
+- Frontend: App Shell em reconstrução visual, com identidade visual baseada na referência fornecida e funcionalidade preservada para integração com o backend.
 
 ## Etapas
 - [x] Mapear arquitetura do backend
@@ -27,7 +27,9 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [x] Criar área de usuário/sessão
 - [x] Criar logout da sessão
 - [x] Criar responsividade inicial
-- [x] Ajustar identidade visual do App Shell à referência fornecida
+- [x] Registrar diretriz de identidade visual
+- [🚧] Reconstruir identidade visual do App Shell
+- [ ] Validar visual final do App Shell contra a referência fornecida
 - [ ] Integrar login real à API
 - [ ] Validar menu com roles reais retornados pelo backend
 - [ ] Criar Dashboard real
@@ -38,24 +40,43 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [ ] Criar Financeiro
 - [ ] Criar Relatórios
 
-## Registro da etapa — Ajuste visual do App Shell
+## Registro da etapa — Reconstrução visual do App Shell
 **Data:** 2026-08-15
 
-**Desenvolvido:** ajuste da aparência do App Shell para seguir o padrão visual de referência fornecido pelo projeto, sem copiar a funcionalidade dos botões do material de referência.
+**Objetivo:** reconstruir visualmente o App Shell com base na identidade visual do PDF/PowerPoint fornecido, sem transformar os botões ou funcionalidades da referência em especificação funcional.
 
-**Identidade visual:** logo superior com tratamento colorido e marca d'água LA em azul na área principal, mantendo a estrutura limpa, corporativa e clara do layout de referência.
+**Desenvolvido:** refinamento da estrutura HTML e do CSS do App Shell, mantendo a navegação modular e a preparação para sessão/permissões do backend. Foram reforçados o tratamento visual do logo LA-SISTEMAS, a hierarquia do menu, a linguagem corporativa, o cabeçalho, os cards, a área principal e a marca d'água LA.
 
 **Arquivos alterados:**
 - `frontend/app-shell.html`
 - `frontend/styles/app-shell.css`
 
-**Integração:** nenhuma regra de negócio foi alterada. O ajuste é exclusivamente visual e continua preparado para a integração com as APIs oficiais.
+**Arquivos de documentação criados anteriormente nesta etapa:**
+- `frontend/docs/IDENTIDADE-VISUAL.md`
+- `frontend/docs/APP-SHELL-VISUAL.md`
 
-**Testes:** revisão estrutural dos arquivos e responsividade CSS; validação funcional completa será feita junto da integração do frontend.
+**Regras respeitadas:**
+- Backend continua sendo a fonte oficial das funcionalidades, permissões, validações e regras de negócio.
+- Nenhuma regra de negócio do backend foi alterada.
+- Nenhuma funcionalidade foi criada apenas por existir no PowerPoint.
+- O desenvolvimento permanece no branch `feature/financeiro-completo`.
 
-**Commits:** `0b55a3a6d57ca7677d72ab36e7039aea69686f33` e `4dad6cfadb83cdaed7ecfe4ed8d54e16f5e78175`.
+**Integração:** nenhuma API nova foi conectada nesta etapa.
 
-**Próximo passo:** integrar `POST /auth/login` e `GET /auth/me`, substituir a sessão de demonstração pela sessão real e validar as permissões fornecidas pelo backend.
+**Testes:** revisão estrutural do HTML/CSS e preservação da navegação existente; validação visual final e testes de integração permanecem pendentes.
+
+**Commits:**
+- `7db6fdc397629f7f62bf5434ed9e2b723659ac4b` — reconstrução da estrutura visual do App Shell.
+- `77c70a757a1bfc0b4f5381b895170ff65b878e03` — aplicação da identidade visual no CSS.
+
+**Status:** 🚧 Em desenvolvimento.
+
+**Próximo passo:** validar visualmente o App Shell contra a referência fornecida e, após aprovação, partir para a integração de `POST /auth/login` e `GET /auth/me`.
+
+## Registro da etapa — Diretriz visual
+**Data:** 2026-08-15
+
+Foi criada a documentação `frontend/docs/IDENTIDADE-VISUAL.md`, estabelecendo que o PDF/PowerPoint orienta exclusivamente a identidade visual e que as funcionalidades continuam determinadas pelo backend.
 
 ## Registro da etapa — App Shell inicial
 **Data:** 2026-08-15
