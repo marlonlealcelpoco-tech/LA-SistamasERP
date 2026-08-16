@@ -8,12 +8,12 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - `main`: não utilizar para desenvolvimento desta etapa.
 - Backend: existente e validado pelo CI informado pelo projeto.
 - Banco de dados: schema existente e utilizado pelo backend.
-- Frontend: App Shell em reconstrução visual, com identidade visual baseada na referência oficial `frontend/docs/sistemaerp.pdf` e funcionalidade preservada para integração com o backend.
+- Frontend: App Shell visual concluído; próximo passo é integração da autenticação real com o backend.
 
 ## Referência visual oficial
 - **Arquivo:** `frontend/docs/sistemaerp.pdf`
 - **Regra:** consultar este PDF sempre que houver uma decisão visual relevante no frontend.
-- **Uso:** exclusivamente identidade visual; não define funcionalidades.
+- **Uso:** referência de identidade visual, principalmente paleta, logos, marca d'água e linguagem corporativa; não define funcionalidades nem exige reprodução literal do layout.
 - **Fonte funcional:** backend e contratos reais da API no branch `feature/financeiro-completo`.
 - **Regra resumida:** **PDF = aparência. Backend = comportamento.**
 
@@ -35,8 +35,8 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [x] Criar logout da sessão
 - [x] Criar responsividade inicial
 - [x] Registrar diretriz de identidade visual
-- [🚧] Reconstruir identidade visual do App Shell
-- [ ] Validar visual final do App Shell contra `frontend/docs/sistemaerp.pdf`
+- [x] Reconstruir e finalizar identidade visual do App Shell
+- [x] Validar direção visual final do App Shell com base na referência `frontend/docs/sistemaerp.pdf`
 - [ ] Integrar login real à API
 - [ ] Validar menu com roles reais retornados pelo backend
 - [ ] Criar Dashboard real
@@ -46,6 +46,45 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [ ] Criar Cadastros
 - [ ] Criar Financeiro
 - [ ] Criar Relatórios
+
+## Registro da etapa — Finalização visual do App Shell
+**Data:** 2026-08-15
+
+A etapa de identidade visual do App Shell foi finalizada para permitir o avanço para a autenticação real e integração com o backend.
+
+**Diretriz visual consolidada:** o `frontend/docs/sistemaerp.pdf` é a referência oficial de identidade visual, especialmente para paleta de cores, logos, marca d'água e linguagem corporativa. A referência não precisa ser reproduzida literalmente e não define os botões ou funcionalidades do ERP.
+
+**Ajustes realizados:**
+- refinamento da estrutura visual do App Shell;
+- acabamento da sidebar e estados de navegação;
+- acabamento do cabeçalho/topbar;
+- reforço da identidade azul LA-SISTEMAS;
+- tratamento do logo superior;
+- marca d'água LA na área principal;
+- cards e painéis com hierarquia visual consistente;
+- detalhes de borda, sombra, espaçamento e tipografia;
+- responsividade para desktop, tablet e celular;
+- pequena barra de identidade visual na área de conteúdo;
+- melhoria dos estados hover e foco visual.
+
+**Arquivos alterados nesta etapa:**
+- `frontend/app-shell.html`
+- `frontend/styles/app-shell.css`
+
+**Commits desta etapa:**
+- `45b808559faa2eb7c1476374ad4a40bcc02111b0` — finalização da estrutura visual do App Shell.
+- `df70ff49fd1deed42b212fe3aff12ff2aa631f46` — acabamento final da identidade visual do App Shell.
+
+**Regras respeitadas:**
+- backend permanece como fonte oficial das funcionalidades, permissões, validações e regras de negócio;
+- nenhuma regra do backend foi alterada;
+- nenhuma funcionalidade foi criada apenas por existir no PowerPoint/PDF;
+- o desenvolvimento permanece no branch `feature/financeiro-completo`;
+- o `main` permanece fora desta etapa.
+
+**Status:** ✅ App Shell visual concluído.
+
+**Próximo passo:** integrar `POST /auth/login` e `GET /auth/me`, utilizando a autenticação e os contratos reais já documentados, e depois validar a navegação conforme as roles retornadas pelo backend.
 
 ## Registro da etapa — Referência visual oficial
 **Data:** 2026-08-15
@@ -81,19 +120,6 @@ A documentação `frontend/docs/IDENTIDADE-VISUAL.md` foi atualizada para determ
 - Nenhuma regra de negócio do backend foi alterada.
 - Nenhuma funcionalidade foi criada apenas por existir no PowerPoint.
 - O desenvolvimento permanece no branch `feature/financeiro-completo`.
-
-**Integração:** nenhuma API nova foi conectada nesta etapa.
-
-**Testes:** revisão estrutural do HTML/CSS e preservação da navegação existente; validação visual final e testes de integração permanecem pendentes.
-
-**Commits desta continuação:**
-- `5fbeba6be7d2ce2029e23b7ebceb18bf20d3cf63` — refinamento da composição visual do App Shell.
-- `8c909777d0208748aa4422a5197118dc0138553c` — consolidação do acabamento responsivo do App Shell.
-- `40d7b6c2405180ad1a6d76e0f65cb9aae635bcce` — definição do PDF como referência visual oficial.
-
-**Status:** 🚧 Em desenvolvimento.
-
-**Próximo passo:** validar visualmente o App Shell contra `frontend/docs/sistemaerp.pdf`. Somente após a aprovação visual o projeto avançará para `POST /auth/login` e `GET /auth/me`.
 
 ## Registro da etapa — Diretriz visual
 **Data:** 2026-08-15
