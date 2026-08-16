@@ -8,7 +8,7 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - `main`: não utilizar para desenvolvimento desta etapa.
 - Backend: existente e validado pelo CI informado pelo projeto.
 - Banco de dados: schema existente e utilizado pelo backend.
-- Frontend: App Shell visual concluído; próximo passo é integração da autenticação real com o backend.
+- Frontend: App Shell visual concluído e autenticação real integrada aos endpoints oficiais do backend.
 
 ## Referência visual oficial
 - **Arquivo:** `frontend/docs/sistemaerp.pdf`
@@ -37,7 +37,10 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [x] Registrar diretriz de identidade visual
 - [x] Reconstruir e finalizar identidade visual do App Shell
 - [x] Validar direção visual final do App Shell com base na referência `frontend/docs/sistemaerp.pdf`
-- [ ] Integrar login real à API
+- [x] Integrar `POST /auth/login`
+- [x] Integrar `GET /auth/me`
+- [x] Proteger App Shell por sessão JWT
+- [x] Registrar autenticação real na documentação de integração
 - [ ] Validar menu com roles reais retornados pelo backend
 - [ ] Criar Dashboard real
 - [ ] Criar PDV
@@ -47,6 +50,43 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [ ] Criar Financeiro
 - [ ] Criar Relatórios
 
+## Registro da etapa — Autenticação real
+**Data:** 2026-08-15
+
+A etapa de integração do login real foi implementada no frontend com base direta nos contratos já existentes no backend.
+
+### Implementado
+- `frontend/login.html` — tela de acesso com identidade visual LA-SISTEMAS.
+- `frontend/styles/login.css` — identidade visual da tela de login.
+- `frontend/js/api.js` — cliente HTTP centralizado para a API oficial, com suporte a JWT.
+- `frontend/js/login.js` — fluxo de `POST /auth/login`, armazenamento de sessão e confirmação via `GET /auth/me`.
+- `frontend/js/app-shell.js` — proteção do App Shell por JWT, confirmação de sessão e tratamento de `401`.
+- `frontend/app-shell.html` — carregamento do cliente oficial da API antes do Shell.
+
+### Contratos utilizados
+O backend existente define:
+- `POST /auth/login` recebendo `email` e `password` e retornando `user` e `token`.
+- `GET /auth/me` exigindo autenticação JWT e retornando o `user` autenticado.
+
+### Sessão
+O JWT e os dados da sessão são mantidos em `sessionStorage` apenas durante a sessão do navegador. O frontend não utiliza `localStorage` como banco paralelo.
+
+### Regras respeitadas
+- Nenhum endpoint novo foi criado.
+- Nenhuma regra de autenticação foi duplicada no frontend.
+- O backend continua sendo a autoridade final para autenticação e autorização.
+- O App Shell não abre sem uma sessão JWT.
+- Se `/auth/me` retornar `401`, a sessão é removida e o usuário retorna ao login.
+- O logout remove o token e a sessão local e retorna ao login.
+
+### Configuração da API
+O cliente usa `http://localhost:3000` como base padrão de desenvolvimento. A aplicação pode sobrescrever essa URL por `window.LA_API_BASE_URL` antes do carregamento de `frontend/js/api.js`.
+
+### Status
+**Autenticação real:** ✅ implementada no frontend.
+
+**Próximo passo:** validar a execução ponta a ponta contra uma instância real do backend e, em seguida, mapear os `roles` retornados pelo backend para a navegação real sem inventar permissões.
+
 ## Registro da etapa — Finalização visual do App Shell
 **Data:** 2026-08-15
 
@@ -54,92 +94,16 @@ A etapa de identidade visual do App Shell foi finalizada para permitir o avanço
 
 **Diretriz visual consolidada:** o `frontend/docs/sistemaerp.pdf` é a referência oficial de identidade visual, especialmente para paleta de cores, logos, marca d'água e linguagem corporativa. A referência não precisa ser reproduzida literalmente e não define os botões ou funcionalidades do ERP.
 
-**Ajustes realizados:**
-- refinamento da estrutura visual do App Shell;
-- acabamento da sidebar e estados de navegação;
-- acabamento do cabeçalho/topbar;
-- reforço da identidade azul LA-SISTEMAS;
-- tratamento do logo superior;
-- marca d'água LA na área principal;
-- cards e painéis com hierarquia visual consistente;
-- detalhes de borda, sombra, espaçamento e tipografia;
-- responsividade para desktop, tablet e celular;
-- pequena barra de identidade visual na área de conteúdo;
-- melhoria dos estados hover e foco visual.
-
-**Arquivos alterados nesta etapa:**
-- `frontend/app-shell.html`
-- `frontend/styles/app-shell.css`
-
-**Commits desta etapa:**
-- `45b808559faa2eb7c1476374ad4a40bcc02111b0` — finalização da estrutura visual do App Shell.
-- `df70ff49fd1deed42b212fe3aff12ff2aa631f46` — acabamento final da identidade visual do App Shell.
-
-**Regras respeitadas:**
-- backend permanece como fonte oficial das funcionalidades, permissões, validações e regras de negócio;
-- nenhuma regra do backend foi alterada;
-- nenhuma funcionalidade foi criada apenas por existir no PowerPoint/PDF;
-- o desenvolvimento permanece no branch `feature/financeiro-completo`;
-- o `main` permanece fora desta etapa.
-
 **Status:** ✅ App Shell visual concluído.
-
-**Próximo passo:** integrar `POST /auth/login` e `GET /auth/me`, utilizando a autenticação e os contratos reais já documentados, e depois validar a navegação conforme as roles retornadas pelo backend.
 
 ## Registro da etapa — Referência visual oficial
 **Data:** 2026-08-15
 
 O arquivo `frontend/docs/sistemaerp.pdf` foi confirmado dentro do projeto e passa a ser a referência visual oficial e permanente do frontend.
 
-A documentação `frontend/docs/IDENTIDADE-VISUAL.md` foi atualizada para determinar que o PDF deve ser consultado em futuras decisões visuais e que ele não deve ser interpretado como especificação funcional.
-
 **Regra permanente:**
 - PDF/PowerPoint → identidade visual, composição, logos, cores, proporções e linguagem visual.
 - Backend → funcionalidades, menus, ações, permissões, validações, fluxos e regras de negócio.
-
-**Status:** referência visual registrada e disponível no repositório.
-
-## Registro da etapa — Reconstrução visual do App Shell
-**Data:** 2026-08-15
-
-**Objetivo:** reconstruir visualmente o App Shell com base na identidade visual do PDF/PowerPoint fornecido, sem transformar os botões ou funcionalidades da referência em especificação funcional.
-
-**Desenvolvido:** refinamento da estrutura HTML e do CSS do App Shell, mantendo a navegação modular e a preparação para sessão/permissões do backend. Foram reforçados o tratamento visual do logo LA-SISTEMAS, a hierarquia do menu, a linguagem corporativa, o cabeçalho, os cards, a área principal, a marca d'água LA e o comportamento responsivo.
-
-**Arquivos alterados:**
-- `frontend/app-shell.html`
-- `frontend/styles/app-shell.css`
-
-**Documentação relacionada:**
-- `frontend/docs/IDENTIDADE-VISUAL.md`
-- `frontend/docs/APP-SHELL-VISUAL.md`
-- `frontend/docs/sistemaerp.pdf`
-
-**Regras respeitadas:**
-- Backend continua sendo a fonte oficial das funcionalidades, permissões, validações e regras de negócio.
-- Nenhuma regra de negócio do backend foi alterada.
-- Nenhuma funcionalidade foi criada apenas por existir no PowerPoint.
-- O desenvolvimento permanece no branch `feature/financeiro-completo`.
-
-## Registro da etapa — Diretriz visual
-**Data:** 2026-08-15
-
-Foi criada a documentação `frontend/docs/IDENTIDADE-VISUAL.md`, estabelecendo que o PDF/PowerPoint orienta exclusivamente a identidade visual e que as funcionalidades continuam determinadas pelo backend.
-
-## Registro da etapa — App Shell inicial
-**Data:** 2026-08-15
-
-**Desenvolvido:** shell principal, sidebar, topbar, breadcrumb, identificação do usuário, status do sistema, logout, navegação visual e responsividade inicial.
-
-**Arquivos criados:**
-- `frontend/app-shell.html`
-- `frontend/styles/app-shell.css`
-- `frontend/js/app-shell.js`
-- `frontend/docs/REGRAS-DESENVOLVIMENTO.md`
-
-**Integração:** preparado para receber sessão/permissões e APIs oficiais; a autenticação real ainda será conectada no próximo passo.
-
-**Testes:** validação estrutural dos arquivos e navegação básica; testes de integração com backend ainda pendentes.
 
 ## Regra de arquitetura
 O backend é a autoridade final para autenticação, autorização, regras de negócio e persistência. O frontend não deve duplicar essas regras.
