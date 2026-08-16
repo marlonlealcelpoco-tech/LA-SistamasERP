@@ -8,7 +8,7 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - `main`: não utilizar para desenvolvimento desta etapa.
 - Backend: existente e validado pelo CI informado pelo projeto.
 - Banco de dados: schema existente e utilizado pelo backend.
-- Frontend: App Shell visual concluído e autenticação real integrada aos endpoints oficiais do backend.
+- Frontend: App Shell visual concluído, autenticação real integrada e primeira camada de visibilidade de navegação baseada nos roles oficiais do backend.
 
 ## Referência visual oficial
 - **Arquivo:** `frontend/docs/sistemaerp.pdf`
@@ -41,7 +41,8 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [x] Integrar `GET /auth/me`
 - [x] Proteger App Shell por sessão JWT
 - [x] Registrar autenticação real na documentação de integração
-- [ ] Validar menu com roles reais retornados pelo backend
+- [x] Mapear roles oficiais do backend para a camada de navegação visual
+- [ ] Validar menu por role contra uma instância real do backend
 - [ ] Criar Dashboard real
 - [ ] Criar PDV
 - [ ] Criar Caixa
@@ -49,6 +50,50 @@ Registrar permanentemente o estado da construção do frontend para permitir ret
 - [ ] Criar Cadastros
 - [ ] Criar Financeiro
 - [ ] Criar Relatórios
+
+## Registro da etapa — Mapeamento dos roles oficiais
+**Data:** 2026-08-15
+
+O backend do branch `feature/financeiro-completo` foi consultado diretamente para identificar os roles oficiais e as políticas de autorização existentes.
+
+### Roles oficiais
+- `ADMIN`
+- `GERENTE`
+- `SUPERVISOR`
+- `VENDAS`
+- `ESTOQUE`
+- `FINANCEIRO`
+
+### Políticas identificadas no backend
+- `ADMIN`: somente `ADMIN`.
+- `MANAGER`: `ADMIN`, `GERENTE`.
+- `FINANCE`: `ADMIN`, `FINANCEIRO`.
+- `CASH_OPERATORS`: `ADMIN`, `GERENTE`, `SUPERVISOR`, `VENDAS`.
+- `CASH_REPORTS`: `ADMIN`, `FINANCEIRO`.
+- `CUSTOMER_MAINTENANCE`: `ADMIN`, `GERENTE`, `FINANCEIRO`.
+- `PRODUCT_MAINTENANCE`: `ADMIN`, `GERENTE`, `FINANCEIRO`.
+- `PURCHASE_MAINTENANCE`: `ADMIN`, `GERENTE`, `FINANCEIRO`.
+- `INVENTORY_MAINTENANCE`: `ADMIN`, `GERENTE`, `ESTOQUE`.
+- `PDV`: `ADMIN`, `GERENTE`, `SUPERVISOR`, `VENDAS`.
+- `SUPERVISOR_AUTHORITY`: `ADMIN`, `GERENTE`, `SUPERVISOR`.
+- `COST_VIEW`: `ADMIN`, `GERENTE`, `FINANCEIRO`.
+
+### Frontend
+A navegação visual do App Shell passou a receber `data-roles` e filtra a exibição dos módulos conforme os roles retornados por `/auth/me`.
+
+Essa filtragem é **somente uma camada de UX**. A autorização real continua no backend; o frontend não substitui `requireRoles` nem cria uma política de segurança independente.
+
+**Arquivos alterados:**
+- `frontend/app-shell.html`
+- `frontend/js/app-shell.js`
+
+**Commits:**
+- `7858b67c74843733143b3434f22937a147bafaf3` — mapeamento inicial da visibilidade dos menus.
+- `42bef10754eb041c23d695b93b4b6b6eadb7508b` — aplicação dos roles retornados à navegação visual.
+
+**Status:** ✅ Mapeamento inicial concluído.
+
+**Pendente:** validar o comportamento de cada perfil contra uma instância real do backend e ajustar somente se houver divergência entre a navegação e as políticas efetivas.
 
 ## Registro da etapa — Autenticação real
 **Data:** 2026-08-15
@@ -85,7 +130,7 @@ O cliente usa `http://localhost:3000` como base padrão de desenvolvimento. A ap
 ### Status
 **Autenticação real:** ✅ implementada no frontend.
 
-**Próximo passo:** validar a execução ponta a ponta contra uma instância real do backend e, em seguida, mapear os `roles` retornados pelo backend para a navegação real sem inventar permissões.
+**Próximo passo:** validar a execução ponta a ponta contra uma instância real do backend e continuar pelas telas reais do ERP.
 
 ## Registro da etapa — Finalização visual do App Shell
 **Data:** 2026-08-15
