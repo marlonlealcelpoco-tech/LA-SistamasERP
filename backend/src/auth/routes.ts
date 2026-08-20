@@ -32,8 +32,6 @@ export function registerAuthRoutes(
       return reply.code(409).send({ message: "O administrador inicial já foi criado." });
     }
 
-    // No primeiro acesso não exigimos um segredo que o usuário não teria como conhecer.
-    // A operação fica disponível somente enquanto não existir nenhum usuário.
     if (environment.BOOTSTRAP_TOKEN && input.bootstrapToken && input.bootstrapToken !== environment.BOOTSTRAP_TOKEN) {
       return reply.code(403).send({ message: "Token de inicialização inválido." });
     }
@@ -50,14 +48,30 @@ export function registerAuthRoutes(
 
   app.post("/auth/login", async (request, reply) => {
     const input = credentialsSchema.parse(request.body);
-    const user = await users.findByEmail(input.email);
+    let user = await users.findByEmail(input.email);
+
+    // Primeiro acesso: se o banco ainda não tiver usuários, as credenciais informadas
+    // tornam-se o administrador inicial. Assim o APK não depende de uma senha/token
+    // pré-configurado que o usuário não teria como conhecer.
+    if (!user && await users.count() === 0) {
+      const localPart = input.email.split("@")[0].replace(/[._-]+/g, " ").trim();
+      const name = localPart.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 150) || "Administrador";
+      user = await users.createWithRoles(
+        name,
+        input.email,
+        await hashPassword(input.password),
+        ["ADMIN"]
+      );
+      const token = await reply.jwtSign({ sub: String(user.id), email: user.email });
+      return { user: publicUser(user, ["ADMIN"]), token, firstAccess: true };
+    }
 
     if (!user || !user.active || !(await verifyPassword(input.password, user.password_hash))) {
       return reply.code(401).send({ message: "E-mail ou senha inválidos." });
     }
 
     const token = await reply.jwtSign({ sub: String(user.id), email: user.email });
-    return { user: publicUser(user, await users.findRoleNames(user.id)), token };
+    return { user: publicUser(user, await users.findRoleNames(user.id)), token, firstAccess: false };
   });
 
   app.get("/auth/me", { onRequest: [app.authenticate] }, async (request, reply) => {
