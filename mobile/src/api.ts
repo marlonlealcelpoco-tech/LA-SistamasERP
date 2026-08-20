@@ -3,7 +3,7 @@ export type Product={id:number;name:string;categoryId:number|null;category:strin
 export type Supplier={id:number;name:string;contact:string|null};
 export type Batch={id:number;name:string;quoteDate:string;createdAt:string};
 export type Quotation={id:number;batchId:number;productId:number;supplierId:number;productName:string;supplierName:string;priceType:"un"|"cx";value:string|number;quantity:number;unitsPerBox:number;salePrice:string|number;saleUnit:string;costUnit:number;profit:number;margin:number};
-const DEFAULT_API_URL="https://qutcnisrxwzgebgtogqk.supabase.co/functions/v1/la-cotacoes-api-v2";
+const DEFAULT_API_URL="https://qutcnisrxwzgebgtogqk.supabase.co/functions/v1/la-cotacoes-api-v2-clean";
 export function getApiUrl(){return (localStorage.getItem("la_cotacoes_api_url")||(import.meta.env.VITE_API_URL||DEFAULT_API_URL)).replace(/\/$/,"")}
 export function setApiUrl(value:string){localStorage.setItem("la_cotacoes_api_url",value.trim().replace(/\/$/,""))}
 async function request<T>(path:string,init:RequestInit={}){const headers=new Headers(init.headers);if(init.body)headers.set("Content-Type","application/json");let r:Response;try{r=await fetch(`${getApiUrl()}${path}`,{...init,headers})}catch(e){throw new Error(`Falha de conexão com a API: ${e instanceof Error?e.message:String(e)}`)}const raw=await r.text();let body:any={};try{body=raw?JSON.parse(raw):{}}catch{body={message:raw}}if(!r.ok){const detail=body?.message||body?.error||body?.details||body?.hint;if(typeof detail==='string')throw new Error(detail);if(detail&&typeof detail==='object')throw new Error(JSON.stringify(detail));throw new Error(`Erro HTTP ${r.status} ao acessar ${path}`)}return body as T}
