@@ -16,11 +16,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: gradle
 
       - name: Verify Java
         run: java -version
@@ -30,10 +29,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: mobile/package.json
+          cache-dependency-path: mobile/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build web app
         env:
@@ -45,6 +44,9 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Verify Gradle Java
+        run: cd android && ./gradlew --version
 
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
