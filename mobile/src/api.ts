@@ -6,7 +6,8 @@ export type AuthUser={id:number;name:string;email:string;active:boolean;roles:st
 let token=localStorage.getItem("la_cotacoes_token")||"";
 export function setToken(value:string){token=value;localStorage.setItem("la_cotacoes_token",value)}
 export function clearToken(){token="";localStorage.removeItem("la_cotacoes_token")}
-export function getApiUrl(){return (localStorage.getItem("la_cotacoes_api_url")||(import.meta.env.VITE_API_URL||"http://10.0.2.2:3333")).replace(/\/$/,"")}
+const DEFAULT_API_URL="https://qutcnisrxwzgebgtogqk.supabase.co/functions/v1/la-cotacoes-api-v2";
+export function getApiUrl(){return (localStorage.getItem("la_cotacoes_api_url")||(import.meta.env.VITE_API_URL||DEFAULT_API_URL)).replace(/\/$/,"")}
 export function setApiUrl(value:string){localStorage.setItem("la_cotacoes_api_url",value.trim().replace(/\/$/,""))}
 async function request<T>(path:string,init:RequestInit={}){const headers=new Headers(init.headers);headers.set("Content-Type","application/json");if(token)headers.set("Authorization",`Bearer ${token}`);const r=await fetch(`${getApiUrl()}${path}`,{...init,headers});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body.message||"Falha na comunicação com o servidor");return body as T}
 export async function login(email:string,password:string){const data=await request<{token:string;user:AuthUser}>("/auth/login",{method:"POST",body:JSON.stringify({email,password})});setToken(data.token);return data}
