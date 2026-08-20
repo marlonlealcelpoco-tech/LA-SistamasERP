@@ -8,11 +8,13 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
-    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.app.json" }]
+  "include": ["src"]
 }
