@@ -11,7 +11,7 @@ const credentialsSchema = z.object({
 
 const setupSchema = credentialsSchema.extend({
   name: z.string().trim().min(2).max(150),
-  bootstrapToken: z.string().min(16)
+  bootstrapToken: z.string().min(16).optional()
 });
 
 function publicUser(user: { id: number; name: string; email: string; active: boolean }, roles: string[]) {
@@ -23,15 +23,19 @@ export function registerAuthRoutes(
   users: UserRepository,
   environment: Environment
 ) {
+  app.get("/auth/status", async () => ({ setupRequired: (await users.count()) === 0 }));
+
   app.post("/auth/setup", async (request, reply) => {
     const input = setupSchema.parse(request.body);
 
-    if (input.bootstrapToken !== environment.BOOTSTRAP_TOKEN) {
-      return reply.code(403).send({ message: "Token de inicialização inválido." });
-    }
-
     if (await users.count() > 0) {
       return reply.code(409).send({ message: "O administrador inicial já foi criado." });
+    }
+
+    // No primeiro acesso não exigimos um segredo que o usuário não teria como conhecer.
+    // A operação fica disponível somente enquanto não existir nenhum usuário.
+    if (environment.BOOTSTRAP_TOKEN && input.bootstrapToken && input.bootstrapToken !== environment.BOOTSTRAP_TOKEN) {
+      return reply.code(403).send({ message: "Token de inicialização inválido." });
     }
 
     const user = await users.createWithRoles(
@@ -41,7 +45,7 @@ export function registerAuthRoutes(
       ["ADMIN"]
     );
     const token = await reply.jwtSign({ sub: String(user.id), email: user.email });
-    return reply.code(201).send({ user, token });
+    return reply.code(201).send({ user: publicUser(user, ["ADMIN"]), token });
   });
 
   app.post("/auth/login", async (request, reply) => {
