@@ -29,9 +29,10 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Configure production API
+        run: printf '%s\n' 'VITE_API_URL=https://qutcnisrxwzgebgtogqk.supabase.co/functions/v1/la-cotacoes-api-v2' > .env.production
+
       - name: Build web app with Supabase API
-        env:
-          VITE_API_URL: https://qutcnisrxwzgebgtogqk.supabase.co/functions/v1/la-cotacoes-api-v2
         run: npm run build
 
       - name: Add Android platform
@@ -49,5 +50,6 @@ jobs:
       - name: Publish APK
         uses: actions/upload-artifact@v4
         with:
-          name: LA-Cotacoes-Supabase-debug
+          name: LA-Cotacoes-Supabase-v2-debug
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
