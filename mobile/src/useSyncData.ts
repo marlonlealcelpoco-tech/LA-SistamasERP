@@ -12,18 +12,14 @@ export type Product = { id: number; name: string; categoryId: number | null; cat
 export type Supplier = { id: number; name: string; contact: string | null };
 export type Quotation = { id: number; productId: number; supplierId: number; productName: string; supplierName: string; priceType: 'un' | 'cx'; value: string | number; unitsPerBox: number; costUnit: number; salePrice: string | number; profit: number; margin: number };
 
-const SYNC_INTERVAL = 10000; // 10 segundos
-const SYNC_TIMEOUT = 5000; // timeout de 5 segundos
+const SYNC_INTERVAL = 10000;
+const SYNC_TIMEOUT = 5000;
 
-/**
- * Hook para sincronização periódica de dados
- * Verifica mudanças a cada 10 segundos
- */
 export function useSyncData(
   onDataChange: (data: SyncableData) => void,
   enabled: boolean = true
 ) {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastHashRef = useRef<string>('');
 
   const computeHash = useCallback((data: SyncableData): string => {
@@ -44,7 +40,7 @@ export function useSyncData(
 
       const response = await fetch('/quotations/bootstrap', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('la_cotacoes_token') || ''}`,
+          Authorization: `Bearer ${localStorage.getItem('la_cotacoes_token') || ''}`,
         },
         signal: controller.signal,
       });
@@ -53,7 +49,6 @@ export function useSyncData(
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token expirado
           localStorage.removeItem('la_cotacoes_token');
         }
         return;
@@ -62,7 +57,6 @@ export function useSyncData(
       const data: SyncableData = await response.json();
       const newHash = computeHash(data);
 
-      // Se os dados mudaram, notifica
       if (newHash !== lastHashRef.current) {
         lastHashRef.current = newHash;
         onDataChange(data);
@@ -83,10 +77,8 @@ export function useSyncData(
       return;
     }
 
-    // Faz a primeira sincronização imediatamente
     void fetchLatestData();
 
-    // Depois sincroniza periodicamente
     intervalRef.current = setInterval(() => {
       void fetchLatestData();
     }, SYNC_INTERVAL);
@@ -94,6 +86,7 @@ export function useSyncData(
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [enabled, fetchLatestData]);
