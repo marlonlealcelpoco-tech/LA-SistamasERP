@@ -19,7 +19,13 @@ export class QuotationRepository {
   async deleteSupplier(id: number) { await this.pool.query(`UPDATE quotation_suppliers SET active=FALSE, updated_at=CURRENT_TIMESTAMP WHERE id=$1`, [id]); }
   async listQuotations() {
     const result = await this.pool.query<any>(`SELECT q.id, q.product_id AS "productId", q.supplier_id AS "supplierId", p.name AS "productName", s.name AS "supplierName", q.price_type AS "priceType", q.value, p.units_per_box AS "unitsPerBox", p.sale_price AS "salePrice" FROM quotations q JOIN quotation_products p ON p.id=q.product_id JOIN quotation_suppliers s ON s.id=q.supplier_id WHERE p.active=TRUE AND s.active=TRUE ORDER BY p.name, q.value`);
-    return result.rows.map((q) => { const costUnit = q.priceType === "cx" ? Number(q.value)/Number(q.unitsPerBox || 1) : Number(q.value); const salePrice=Number(q.salePrice); const profit=salePrice-costUnit; return { ...q, costUnit, profit, margin: salePrice>0 ? (profit/salePrice)*100 : 0 }; }) as Quotation[];
+    return result.rows.map((q) => {
+      const costUnit = q.priceType === "cx" ? Number(q.value) / Number(q.unitsPerBox || 1) : Number(q.value);
+      const salePrice = Number(q.salePrice);
+      const profit = salePrice - costUnit;
+      const margin = costUnit > 0 ? (profit / costUnit) * 100 : 0;
+      return { ...q, costUnit, profit, margin };
+    }) as Quotation[];
   }
   async createQuotation(input: { productId: number; supplierId: number; priceType: "un" | "cx"; value: number }) { return (await this.pool.query(`INSERT INTO quotations (product_id, supplier_id, price_type, value) VALUES ($1,$2,$3,$4) RETURNING id`, [input.productId, input.supplierId, input.priceType, input.value])).rows[0]; }
   async deleteQuotation(id: number) { await this.pool.query(`DELETE FROM quotations WHERE id=$1`, [id]); }
