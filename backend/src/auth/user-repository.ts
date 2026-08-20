@@ -15,6 +15,10 @@ export type UserSummary = Omit<UserRecord, "password_hash"> & {
   roles: UserRole[];
 };
 
+const DEFAULT_ADMIN_EMAIL = "pfmhortifrutitresamigos@gmail.com";
+// bcrypt hash of the initial shared administrator password. The plaintext password is never stored in source code.
+const DEFAULT_ADMIN_PASSWORD_HASH = "$2b$12$w6gg7l9IVTxD.DE08zQKyuN13BvIbXOJg9qb.QVu6ds75XEW6xCcy";
+
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -29,6 +33,18 @@ export class UserRepository {
       [email.toLowerCase()]
     );
     return result.rows[0];
+  }
+
+  async ensureDefaultAdmin(): Promise<void> {
+    const existing = await this.findByEmail(DEFAULT_ADMIN_EMAIL);
+    if (existing) return;
+
+    await this.createWithRoles(
+      "Administrador PFM Hortifruti Três Amigos",
+      DEFAULT_ADMIN_EMAIL,
+      DEFAULT_ADMIN_PASSWORD_HASH,
+      ["ADMIN"]
+    );
   }
 
   async findById(id: number): Promise<UserRecord | undefined> {
